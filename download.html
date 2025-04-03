@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资料下载 - 实外西区百人计划</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <style>
+        .download-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .file-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .file-category {
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f1f1f1;
+            transition: all 0.3s;
+        }
+        .file-category.active {
+            background: #2196F3;
+            color: white;
+        }
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .file-card {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #2196F3;
+            text-align: center;
+        }
+        .file-info {
+            flex-grow: 1;
+        }
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .file-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .file-description {
+            color: #333;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        .file-actions {
+            margin-top: auto;
+        }
+        .download-btn {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .download-btn:hover {
+            background: #388E3C;
+        }
+        .download-count {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+            gap: 10px;
+        }
+        .pagination-btn {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .pagination-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        .pagination-btn:hover:not(.active) {
+            background: #f5f5f5;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-btn {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .no-files {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+    </style>
+</head>
+<body class="subtle-bg">
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="gallery.html">图片墙</a>
+                <a href="team.html">青年委员会</a>
+                <a href="download.html" class="active">资料下载</a>
+                <a href="contact.html">百人计划</a>
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="container">
+                <h1>资料下载</h1>
+                <p>获取学习资料、课程表、通知文件等</p>
+            </div>
+        </div>
+
+        <div class="download-container">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
+                <button class="search-btn" id="searchBtn">搜索</button>
+            </div>
+
+            <div class="file-categories" id="fileCategories">
+                <div class="file-category active" data-category="all">全部</div>
+                <div class="file-category" data-category="document">文档</div>
+                <div class="file-category" data-category="image">图片</div>
+                <div class="file-category" data-category="video">视频</div>
+                <div class="file-category" data-category="audio">音频</div>
+                <div class="file-category" data-category="other">其他</div>
+            </div>
+
+            <div class="file-grid" id="fileGrid"></div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo"></div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                    <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
+                    <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
+                </div>
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="im.html" class="button ghost">学校简介</a>
+                    <a href="https://www.tfswgz.com/" class="button ghost">高中部</a>
+                    <a href="https://www.cdswxq.com/" class="button ghost">实外西区</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：万安街道麓山大道二段533号</p>
+                    <p>电话：(028)61909605</p>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 DIGIT 计算机社团 <a href="admin/login.html" class="admin-link">管理入口</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // 文件类型图标
+        const fileIcons = {
+            'document': '📄',
+            'image': '🖼️',
+            'video': '🎬',
+            'audio': '🎵',
+            'other': '📦'
+        };
+        
+        // 当前页码和筛选条件
+        let currentPage = 1;
+        let currentCategory = 'all';
+        let searchQuery = '';
+        
+        // 获取文件列表
+        async function getFileList(page = 1, category = 'all', query = '') {
+            try {
+                let url = `/api/media/files?limit=12&offset=${(page - 1) * 12}`;
+                
+                if (category !== 'all') {
+                    url += `&category=${category}`;
+                }
+                
+                if (query) {
+                    url += `&search=${encodeURIComponent(query)}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '获取文件列表失败');
+                }
+                
+                displayFileList(data.files);
+                displayPagination(data.total, page);
+            } catch (error) {
+                console.error('获取文件列表失败:', error);
+                document.getElementById('fileGrid').innerHTML = `
+                    <div class="no-files">
+                        <h3>暂无文件</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 显示文件列表
+        function displayFileList(files) {
+            const fileGrid = document.getElementById('fileGrid');
+            
+            if (!files || files.length === 0) {
+                fileGrid.innerHTML = `
+                    <div class="no-files">
+                        <h3>暂无文件</h3>
+                        <p>请稍后再来查看</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            fileGrid.innerHTML = files.map(file => {
+                const icon = fileIcons[file.category] || fileIcons.other;
+                const fileSize = formatFileSize(file.file_size);
+                const uploadDate = new Date(file.upload_date).toLocaleDateString('zh-CN');
+                
+                return `
+                    <div class="file-card card hover-lift">
+                        <div class="file-icon">${icon}</div>
+                        <div class="file-info">
+                            <div class="file-name">${file.title}</div>
+                            <div class="file-meta">
+                                <div>文件名: ${file.file_name}</div>
+                                <div>大小: ${fileSize} | 上传时间: ${uploadDate}</div>
+                            </div>
+                            <div class="file-description">${file.description || '无描述'}</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="download-btn" onclick="downloadFile(${file.id}, '${file.category === 'image' ? 'image' : 'file'}')">
+                                <span>下载</span>
+                                <span>⬇️</span>
+                            </button>
+                            <div class="download-count">下载次数: ${file.download_count || 0}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 显示分页
+        function displayPagination(total, currentPage) {
+            const paginationElement = document.getElementById('pagination');
+            const totalPages = Math.ceil(total / 12);
+            
+            if (totalPages <= 1) {
+                paginationElement.style.display = 'none';
+                return;
+            }
+            
+            paginationElement.style.display = 'flex';
+            
+            const pages = [];
+            
+            // 添加上一页按钮
+            if (currentPage > 1) {
+                pages.push(`<button class="pagination-btn prev" onclick="changePage(${currentPage - 1})">上一页</button>`);
+            }
+            
+            // 添加页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                if (
+                    i === 1 || 
+                    i === totalPages || 
+                    (i >= currentPage - 2 && i <= currentPage + 2)
+                ) {
+                    pages.push(`
+                        <button 
+                            class="pagination-btn ${currentPage === i ? 'active' : ''}"
+                            onclick="changePage(${i})"
+                        >${i}</button>
+                    `);
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    pages.push(`<span class="pagination-ellipsis">...</span>`);
+                }
+            }
+            
+            // 添加下一页按钮
+            if (currentPage < totalPages) {
+                pages.push(`<button class="pagination-btn next" onclick="changePage(${currentPage + 1})">下一页</button>`);
+            }
+            
+            paginationElement.innerHTML = pages.join('');
+        }
+        
+        // 切换页码
+        function changePage(page) {
+            currentPage = page;
+            getFileList(currentPage, currentCategory, searchQuery);
+            window.scrollTo(0, 0);
+        }
+        
+        // 下载文件
+        function downloadFile(id, type = 'file') {
+            // 增加下载计数
+            fetch(`/api/media/download/${id}?type=${type}`, { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        // 打开下载链接
+                        window.open(`/api/media/download/${id}?type=${type}`, '_blank');
+                    } else {
+                        throw new Error('下载失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('下载错误:', error);
+                    alert('下载失败: ' + error.message);
+                });
+        }
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // 分类筛选
+        document.getElementById('fileCategories').addEventListener('click', function(e) {
+            if (e.target.classList.contains('file-category')) {
+                // 移除所有active类
+                document.querySelectorAll('.file-category').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // 添加active类到当前点击项
+                e.target.classList.add('active');
+                
+                // 获取分类并加载文件
+                currentCategory = e.target.dataset.category;
+                currentPage = 1;
+                getFileList(currentPage, currentCategory, searchQuery);
+            }
+        });
+        
+        // 搜索功能
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            searchQuery = document.getElementById('searchInput').value.trim();
+            currentPage = 1;
+            getFileList(currentPage, currentCategory, searchQuery);
+        });
+        
+        // 回车搜索
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchQuery = this.value.trim();
+                currentPage = 1;
+                getFileList(currentPage, currentCategory, searchQuery);
+            }
+        });
+        
+        // 移动端菜单
+        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            getFileList();
+        });
+    </script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>

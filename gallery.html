@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片墙 - 未来科技中学</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <!-- 添加Bootstrap支持 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="gallery.html" class="active">图片墙</a>
+                <a href="team.html">青年委员会</a>
+                <a href="download.html">资料下载</a>
+                <a href="contact.html">百人计划</a>
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <section class="gallery-container container py-5">
+            <h1 class="section-title mb-4">校园图集</h1>
+            
+            <!-- 分类过滤器 -->
+            <div class="category-filter mb-4">
+                <button class="btn btn-outline-primary me-2" onclick="filterByCategory('uncategorized')">全部</button>
+                <button class="btn btn-outline-primary me-2" onclick="filterByCategory('activities')">校园活动</button>
+                <button class="btn btn-outline-primary me-2" onclick="filterByCategory('campus')">校园环境</button>
+                <button class="btn btn-outline-primary me-2" onclick="filterByCategory('events')">重要事件</button>
+            </div>
+
+            <!-- 图片加载进度条 -->
+            <div id="loading-progress" class="progress mb-4 d-none">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <!-- 图片展示区域 -->
+            <div id="gallery-container" class="row g-4">
+                <!-- 图片将通过JavaScript动态加载 -->
+            </div>
+        </section>
+    </main>
+
+    <!-- 图片查看器 -->
+    <div class="modal fade" id="imageViewer" tabindex="-1" aria-labelledby="imageViewerLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageViewerLabel">图片查看</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img src="" class="img-fluid" id="modalImage" alt="查看大图">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo">
+            </div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                    <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
+                    <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
+                </div>
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="im.html" class="button ghost">学校简介</a>
+                    <a href="https://www.tfswgz.com/" class="button ghost">高中部</a>
+                    <a href="https://www.cdswxq.com/" class="button ghost">实外西区</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：万安街道麓山大道二段533号</p>
+                    <p>电话：(028)61909605</p>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 DIGIT 计算机社团 <a href="admin/login.html" class="admin-link">管理入口</a></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript依赖 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/gallery.js"></script>
+</body>
+</html>

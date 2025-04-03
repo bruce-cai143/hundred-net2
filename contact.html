@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于我们 - 未来科技中学</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="gallery.html">图片墙</a>
+                <a href="team.html">青年委员会</a>
+                <a href="download.html">资料下载</a>
+                <a href="contact.html" class="active">百人计划</a>
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="about-hero" style="background-image: url('assets/images/campus.jpg')">
+            <div class="about-hero-content">
+                <h1>联系我们</h1>
+                <p>欢迎了解更多关于未来科技中学的信息</p>
+            </div>
+        </div>
+
+        <section class="about-section">
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-map-marker-alt fa-2x"></i>
+                    </div>
+                    <h3>学校地址</h3>
+                    <p>北京市海淀区科技路123号</p>
+                    <div class="map-container">
+                        <iframe 
+                            src="https://maps.google.com/maps?q=北京海淀区科技路123号&output=embed"
+                            width="100%" 
+                            height="200"
+                            frameborder="0"
+                            style="border:0; border-radius: var(--border-radius);"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-phone fa-2x"></i>
+                    </div>
+                    <h3>联系电话</h3>
+                    <p>招生办：(010) 1234-5678</p>
+                    <p>教务处：(010) 1234-5679</p>
+                    <p>学生处：(010) 1234-5680</p>
+                    <div class="teacher-social" style="margin-top: 20px;">
+                        <a href="#" title="微信"><i class="fab fa-weixin"></i></a>
+                        <a href="#" title="邮箱"><i class="fas fa-envelope"></i></a>
+                        <a href="#" title="微博"><i class="fab fa-weibo"></i></a>
+                    </div>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h3>工作时间</h3>
+                    <p>周一至周五：8:00 - 17:00</p>
+                    <p>周六：9:00 - 15:00</p>
+                    <p>周日：休息</p>
+                    <p style="margin-top: 15px; color: var(--accent-color);">寒暑假期间请提前预约</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2 class="section-title">常见问题</h2>
+            <div class="about-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-graduation-cap fa-2x"></i>
+                    </div>
+                    <h3>招生信息</h3>
+                    <p>我校每年9月统一招生，详细信息请查看招生简章或联系招生办公室。</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-book fa-2x"></i>
+                    </div>
+                    <h3>课程设置</h3>
+                    <p>除国家规定课程外，我校还开设多门特色课程，包括人工智能、机器人工程等。</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <h3>家长会议</h3>
+                    <p>每学期举行两次家长会，通过线上和线下相结合的方式进行。</p>
+                </div>
+
+                <div class="about-card">
+                    <div class="about-card-icon">
+                        <i class="fas fa-bus fa-2x"></i>
+                    </div>
+                    <h3>校车服务</h3>
+                    <p>学校提供定制校车服务，覆盖主要居住区，请提前申请。</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <style>
+    .map-container {
+        margin-top: 20px;
+        width: 100%;
+        overflow: hidden;
+        border-radius: var(--border-radius);
+    }
+    
+    .teacher-social {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    .teacher-social a {
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        transition: color 0.3s ease;
+    }
+    
+    .teacher-social a:hover {
+        color: var(--accent-color);
+    }
+    </style>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo">
+                <img src="assets/images/logo-white.svg" alt="校徽" width="60">
+                <p>未来科技中学</p>
+            </div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="about.html">学校简介</a>
+                    <a href="team.html">师资力量</a>
+                    <a href="download.html">招生简章</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：北京市海淀区科技路123号</p>
+                    <p>电话：(010) 1234-5678</p>
+                    <p>邮箱：info@school.com</p>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 未来科技中学 版权所有</p>
+        </div>
+    </footer>
+
+    <script src="scripts/main.js"></script>
+</body>
+</html>

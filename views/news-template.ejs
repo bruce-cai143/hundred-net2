@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - 学校新闻</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/news.css">
+    <style>
+        .news-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .news-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .news-meta {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .news-content {
+            line-height: 1.8;
+            font-size: 16px;
+            color: #333;
+        }
+        .news-images {
+            margin: 25px 0;
+        }
+        .news-image {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .news-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .news-image-caption {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .back-link {
+            margin-top: 30px;
+            display: inline-block;
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>学校新闻</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">首页</a></li>
+                    <li><a href="/news.html">新闻列表</a></li>
+                    <li><a href="/about.html">关于我们</a></li>
+                    <li><a href="/contact.html">联系我们</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="news-container">
+        <article>
+            <h1 class="news-title"><%= title %></h1>
+            <div class="news-meta">
+                <% if (author) { %>作者: <%= author %> | <% } %>
+                发布时间: <%= formatDate(created_at) %>
+            </div>
+            
+            <% if (images && images.length > 0) { %>
+            <div class="news-images">
+                <% images.forEach(function(image) { %>
+                <div class="news-image">
+                    <img src="<%= image.image_path %>" alt="<%= image.caption || title %>">
+                    <% if (image.caption) { %>
+                    <div class="news-image-caption"><%= image.caption %></div>
+                    <% } %>
+                </div>
+                <% }); %>
+            </div>
+            <% } %>
+            
+            <div class="news-content">
+                <%- content %>
+            </div>
+            
+            <a href="/news.html" class="back-link">← 返回新闻列表</a>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <%= new Date().getFullYear() %> 学校. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <script src="/scripts/main.js"></script>
+</body>
+</html>
