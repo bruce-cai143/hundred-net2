@@ -165,10 +165,10 @@
 
             <!-- 新闻管理内容 -->
             <div class="container-fluid">
-                <h2 class="mb-4">新闻管理</h2>
+                <h2>新闻管理</h2>
             
             <div class="news-form" style="width: 100%; max-width: none;">
-                <h3 id="formTitle" class="mb-3">添加新闻</h3>
+                <h3 id="formTitle">添加新闻</h3>
                 <form id="newsForm">
                     <input type="hidden" id="newsId">
                     <div>
@@ -178,6 +178,10 @@
                     <div>
                         <label for="author">作者：</label>
                         <input type="text" id="author" name="author">
+                    </div>
+                    <div>
+                        <label for="category">类别：</label>
+                        <input type="text" id="category" name="category" required>
                     </div>
                     <div>
                         <label for="content">内容：</label>
@@ -218,8 +222,327 @@
         </div>
     </div>
 
-    <script src="js/admin-utils.js" type="module"></script>
-    <script src="js/news.js" type="module"></script>
-    
+    <!-- <script src="js/admin-utils.js" type="module"></script> -->
+    <script >
+        // 导入工具函数
+        // import { checkAuth, logout } from './js/admin-utils.js';
+
+        // 获取新闻列表
+        async function getNewsList(page = 1) {
+            console.log('get token:', localStorage);
+            // const token = localStorage.getItem('adminToken');
+            // console.log('token:', token);
+            // if (!token) {
+            //     window.location.href = 'login.html';
+            //     return;
+            // }
+            try {
+                const response = await fetch(`/api/news`
+                // , {
+                //     headers: {
+                //         'Authorization': `Bearer ${token}`
+                //     }
+                // }
+            );
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '获取新闻列表失败');
+                }
+                
+                displayNewsList(data.news);
+                displayPagination(data.pagination);
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // 显示新闻列表
+        function displayNewsList(news) {
+            const newsListElement = document.getElementById('newsList');
+            newsListElement.innerHTML = news.map(item => `
+                <div class="news-item">
+                    <div class="news-item-title">${item.title}</div>
+                    <div class="news-item-meta">
+                        ${item.author ? `作者：${item.author} | ` : ''}
+                        发布时间：${new Date(item.created_at).toLocaleString()}
+                    </div>
+                    <div class="news-actions">
+                        <button class="btn-view" onclick="viewNews(${item.id})">查看</button>
+                        <button class="btn-edit" onclick="editNews(${item.id})">编辑</button>
+                        <button class="btn-delete" onclick="deleteNews(${item.id})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 显示分页
+        function displayPagination(pagination) {
+            const paginationElement = document.getElementById('pagination');
+            const pages = [];
+            
+            for (let i = 1; i <= pagination.totalPages; i++) {
+                pages.push(`
+                    <button 
+                        ${pagination.page === i ? 'class="active"' : ''}
+                        onclick="getNewsList(${i})"
+                    >${i}</button>
+                `);
+            }
+            
+            paginationElement.innerHTML = pages.join('');
+        }
+
+        // 图片预览
+        document.getElementById('images').addEventListener('change', function(event) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            Array.from(event.target.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="预览图片">
+                        <button type="button" class="remove-image" onclick="removeImage(${index})">×</button>
+                        <input type="text" class="image-caption" name="caption_${index}" placeholder="图片说明">
+                    `;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // 删除预览图片
+        function removeImage(index) {
+            const input = document.getElementById('images');
+            const preview = document.getElementById('imagePreview');
+            
+            const dt = new DataTransfer();
+            const { files } = input;
+            
+            for (let i = 0; i < files.length; i++) {
+                if (i !== index) {
+                    dt.items.add(files[i]);
+                }
+            }
+            
+            input.files = dt.files;
+            preview.children[index].remove();
+            
+            // 更新其他图片的caption索引
+            Array.from(preview.children).forEach((item, i) => {
+                const caption = item.querySelector('.image-caption');
+                caption.name = `caption_${i}`;
+            });
+        }
+
+        const form = document.getElementById('newsForm')
+
+        // 提交表单
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            //const token = checkAuth();
+            // const formData = new FormData(form);
+            // console.log("formData:", formData);
+            console.log("title:", document.getElementById('title').value)
+            console.log("category:", document.getElementById('category').value)
+            console.log("content:", document.getElementById('content').value)
+            console.log("author:",document.getElementById('author').value)
+
+
+                // 获取表单数据
+            const formData = new FormData(form);
+            const jsonData = {};
+            formData.forEach((value, key) => {
+                jsonData[key] = value;
+            });
+
+            // 处理图片字段
+            const images = [];
+            for (let i = 0; i < formData.getAll('images').length; i++) {
+                images.push({
+                    image: formData.getAll('images')[i],
+                    caption: formData.get(`caption_${i}`)
+                });
+            }
+            jsonData.images = images;
+
+            console.log("jsonData:", jsonData);
+            // const formData = new FormData(this);
+            const newsId = document.getElementById('newsId').value;
+            
+
+            
+            try {
+                const url = newsId ? 
+                    `/api/news/${newsId}` : 
+                    '/api/news';
+                
+                const method = newsId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    // headers: {
+                    //     'Authorization': `Bearer ${token}`
+                    // },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '操作失败');
+                }
+                
+                alert(data.message);
+                resetForm();
+                getNewsList();
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // 重置表单
+        function resetForm() {
+            document.getElementById('newsForm').reset();
+            document.getElementById('newsId').value = '';
+            document.getElementById('formTitle').textContent = '添加新闻';
+            document.getElementById('cancelEdit').style.display = 'none';
+            document.getElementById('imagePreview').innerHTML = '';
+        }
+
+        // 编辑新闻
+        async function editNews(id) {
+            //const token = checkAuth();
+            try {
+                const response = await fetch(`/api/news-manager/${id}`
+                // , {
+                //     headers: {
+                //         'Authorization': `Bearer ${token}`
+                //     }
+                // }
+            );
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '获取新闻信息失败');
+                }
+                
+                const news = data.news;
+                
+                document.getElementById('newsId').value = news.id;
+                document.getElementById('title').value = news.title;
+                document.getElementById('author').value = news.author || '';
+                document.getElementById('content').value = news.content;
+                document.getElementById('formTitle').textContent = '编辑新闻';
+                document.getElementById('cancelEdit').style.display = 'inline-block';
+                
+                // 显示现有图片
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                
+                if (news.images) {
+                    news.images.forEach((image, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'image-item';
+                        div.innerHTML = `
+                            <img src="${image.image_path}" alt="新闻图片">
+                            <button type="button" class="remove-image" onclick="deleteNewsImage(${image.id})">×</button>
+                            <input type="text" class="image-caption" name="caption_${index}" value="${image.caption || ''}" placeholder="图片说明">
+                        `;
+                        preview.appendChild(div);
+                    });
+                }
+                
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // 删除新闻图片
+        async function deleteNewsImage(imageId) {
+            if (!confirm('确定要删除这张图片吗？')) return;
+            
+            //const token = checkAuth();
+            try {
+                const response = await fetch(`/api/news-manager/image/${imageId}`, {
+                    method: 'DELETE',
+                    // headers: {
+                    //     'Authorization': `Bearer ${token}`
+                    // }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '删除图片失败');
+                }
+                
+                // 重新加载编辑表单
+                const newsId = document.getElementById('newsId').value;
+                if (newsId) {
+                    editNews(newsId);
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // 删除新闻
+        async function deleteNews(id) {
+            if (!confirm('确定要删除这条新闻吗？')) return;
+            
+            //const token = checkAuth();
+            try {
+                const response = await fetch(`/api/news-manager/${id}`, {
+                    method: 'DELETE',
+                    // headers: {
+                    //     'Authorization': `Bearer ${token}`
+                    // }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '删除新闻失败');
+                }
+                
+                alert(data.message);
+                getNewsList();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        // 查看新闻
+        function viewNews(id) {
+            window.open(`/news/${id}`, '_blank');
+        }
+
+        // 取消编辑
+        document.getElementById('cancelEdit').addEventListener('click', resetForm);
+
+        // 退出登录功能由 admin-utils.js 处理
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('初始化新闻管理页面...')
+                // const isAuthenticated = await checkAuth();
+                // if (isAuthenticated) {
+                    await getNewsList();
+                // }
+            } catch (error) {
+                console.error('初始化失败:', error);
+            }
+        });
+    </script>
 </body>
 </html>

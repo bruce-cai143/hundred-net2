@@ -7,11 +7,12 @@ const router = express.Router();
 // 获取新闻列表
 router.get('/', async (req, res) => {
     try {
+        // console.log('routers/news:正在检查news表是否存在...');
         // 检查news表是否存在
         const [tables] = await pool.query(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db' AND TABLE_NAME = 'news'"
+            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db2' AND TABLE_NAME = 'news'"
         );
-        
+        // console.log('routers/news:正在检查news表是否存在...',tables);
         if (tables.length === 0) {
             // 如果表不存在，创建表
             console.log('news表不存在，正在创建...');
@@ -90,6 +91,7 @@ router.get('/:id', async (req, res) => {
 // 添加新闻
 router.post('/', authenticateToken, async (req, res) => {
     try {
+        console.log('正在添加新闻...',req.body);
         const { title, content, category, author, image_url } = req.body;
         
         if (!title || !category) {

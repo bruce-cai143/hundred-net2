@@ -129,7 +129,7 @@ function initFadeInAnimation() {
             const elementTop = element.getBoundingClientRect().top;
             
             if (elementTop < triggerBottom) {
-                element.classList.add('visible');
+                element.classList.add('is-visible');
             }
         });
     }
@@ -158,7 +158,7 @@ const mockNews = [
         title: "百人计划学生在全国数学竞赛中获佳绩",
         content: "在近日举行的全国中学生数学竞赛中，我校百人计划的学生表现出色，共有15名学生获得省级以上奖项，其中包括3名全国一等奖，5名全国二等奖。",
         summary: "我校百人计划学生在全国数学竞赛中表现出色，共有15名学生获得省级以上奖项。",
-        cover_image: "assets/images/gallery2.jpg",
+        cover_image: "assets/images/gallery2",
         created_at: "2024-02-20",
         category: "学生成就"
     },
@@ -255,7 +255,7 @@ function displayNews(news) {
         return `
             <div class="news-card card hover-lift">
                 <div class="news-image">
-                    <img src="${imageUrl}" alt="${item.title}" onerror="this.src='assets/images/news-placeholder.jpg'">
+                    <img src="${imageUrl}" alt="${item.title}" onerror="this.src='assets/images/gallery2.jpg'">
                 </div>
                 <div class="news-content">
                     <div class="news-meta">

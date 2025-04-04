@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', async function() {
     // 导入工具函数
-    const { checkAuth, logout, apiRequest } = await import('./admin-utils.js');
+    const { checkAuth, logout } = await import('./admin-utils.js');
     
     // 检查认证状态
     await checkAuth();
@@ -31,25 +31,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function loadDashboardData() {
         try {
             // 获取新闻数量
-            const newsData = await apiRequest('/api/count/news');
+            const newsData = await fetch('/api/count/news');
             if (newsData && newsCount) {
                 newsCount.textContent = newsData.count || 0;
             }
             
             // 获取轮播图数量
-            const slidesData = await apiRequest('/api/count/slides');
+            const slidesData = await fetch('/api/count/slides');
             if (slidesData && slidesCount) {
                 slidesCount.textContent = slidesData.count || 0;
             }
             
             // 获取教师数量
-            const teachersData = await apiRequest('/api/count/teachers');
+            const teachersData = await fetch('/api/count/teachers');
             if (teachersData && teachersCount) {
                 teachersCount.textContent = teachersData.count || 0;
             }
             
             // 获取文件数量
-            const filesData = await apiRequest('/api/count/uploads');
+            const filesData = await fetch('/api/count/uploads');
             if (filesData && filesCount) {
                 filesCount.textContent = filesData.count || 0;
             }
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async function() {
      */
     async function loadRecentActivities() {
         try {
-            const activitiesData = await apiRequest('/api/activities?limit=10');
+            const activitiesData = await fetch('/api/activities?limit=10');
             
             if (activitiesData && activitiesData.activities && activitiesList) {
                 if (activitiesData.activities.length === 0) {

@@ -113,6 +113,8 @@ router.post('/', auth.requireAdmin, upload.array('images', 5), async (req, res) 
         // 生成页面路径 (使用标题的拼音或英文名称更好，这里简化处理)
         const pageName = `news-${Date.now()}.html`;
         const pagePath = `/news-pages/${pageName}`;
+
+        console.log("news:",title,"content:",content,"author",author,"pagePath:",pagePath)
         
         // 插入新闻记录
         const [result] = await db.query(

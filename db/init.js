@@ -19,21 +19,31 @@ async function initDatabase() {
     try {
         // 检查数据库是否存在
         const [rows] = await pool.query(
-            "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'school_db'"
+            "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'school_db2'"
         );
         
         if (rows.length === 0) {
             // 创建数据库
-            await pool.query("CREATE DATABASE IF NOT EXISTS school_db");
+            await pool.query("CREATE DATABASE IF NOT EXISTS school_db2");
             console.log('数据库创建成功');
         }
         
         // 使用数据库
-        await pool.query("USE school_db");
+        await pool.query("USE school_db2");
 
         // 检查并更新表结构
-        await checkAndUpdateTables();
-        
+        // await checkAndUpdateTables();
+         // 首先创建管理员表
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(100),
+                email VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
         // 创建活动记录表
         await pool.query(`
             CREATE TABLE IF NOT EXISTS activities (
@@ -48,17 +58,7 @@ async function initDatabase() {
         `);
         console.log('活动记录表创建成功');
         
-        // 首先创建管理员表
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS admins (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE,
-                password VARCHAR(255) NOT NULL,
-                name VARCHAR(100),
-                email VARCHAR(100),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+       
 
         // 然后创建文件表（因为它依赖于admins表）
         await pool.query(`

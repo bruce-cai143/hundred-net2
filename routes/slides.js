@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     try {
         // 检查slides表是否存在
         const [tables] = await pool.query(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db' AND TABLE_NAME = 'slides'"
+            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db2' AND TABLE_NAME = 'slides'"
         );
         
         if (tables.length === 0) {

@@ -396,7 +396,7 @@ async function loadNews() {
             newsGrid.innerHTML = data.news.map(news => `
                 <div class="news-card card">
                     <div class="news-image">
-                        <img src="${news.image_url || 'assets/images/news-placeholder.jpg'}" alt="${news.title}">
+                        <img src="${news.image_url || 'assets/images/gallery2.jpg'}" alt="${news.title}">
                     </div>
                     <div class="news-content">
                         <div class="news-meta">
@@ -428,7 +428,7 @@ async function loadNews() {
                         newsCard.className = 'news-card card';
                         newsCard.innerHTML = `
                             <div class="news-image">
-                                <img src="${news.image_url || 'assets/images/news-placeholder.jpg'}" alt="${news.title}">
+                                <img src="${news.image_url || 'assets/images/gallery2.jpg'}" alt="${news.title}">
                             </div>
                             <div class="news-content">
                                 <div class="news-meta">

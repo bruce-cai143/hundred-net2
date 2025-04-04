@@ -5,7 +5,7 @@ const dbConfig = {
     host: 'localhost',
     user: 'root',
     password: 'islandture666capbrs', 
-    database: 'school_db'
+    database: 'school_db2'
 };
 
 // 创建数据库连接池

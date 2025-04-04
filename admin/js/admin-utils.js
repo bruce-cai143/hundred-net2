@@ -134,17 +134,6 @@ function getFileIcon(fileType) {
     return icons[fileType] || icons.other;
 }
 
-// API请求函数
-async function apiRequest(url, options = {}) {
-    try {
-        const response = await authenticatedFetch(url, options);
-        return await response.json();
-    } catch (error) {
-        console.error('API请求失败:', error);
-        throw error;
-    }
-}
-
 // 导出工具函数
 export {
     formatFileSize,
@@ -153,7 +142,6 @@ export {
     checkAuth,
     logout,
     authenticatedFetch,
-    apiRequest,
     debounce,
     getFileIcon
 };

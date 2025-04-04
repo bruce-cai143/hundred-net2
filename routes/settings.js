@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     try {
         // 检查settings表是否存在
         const [tables] = await pool.query(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db' AND TABLE_NAME = 'settings'"
+            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'school_db2' AND TABLE_NAME = 'settings'"
         );
         
         if (tables.length === 0) {
