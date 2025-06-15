@@ -126,6 +126,19 @@ async function initDatabase() {
             )
         `);
         
+        // 创建新闻图片表
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS news_images (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                news_id INT,
+                image_path VARCHAR(255) NOT NULL,
+                caption VARCHAR(255),
+                display_order INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+            )
+        `);
+        
         // 创建轮播图表
         await pool.query(`
             CREATE TABLE IF NOT EXISTS slides (
@@ -178,10 +191,41 @@ async function checkAndUpdateTables() {
         console.log('files 表添加了 uploaded_by 列');
     }
 
+    // 检查 news_images 表是否存在
+    try {
+        const [newsImagesColumns] = await pool.query("SHOW COLUMNS FROM news_images");
+        const newsImagesColumnNames = newsImagesColumns.map(col => col.Field);
+        
+        // 如果没有display_order列，添加它
+        if (!newsImagesColumnNames.includes('display_order')) {
+            await pool.query("ALTER TABLE news_images ADD COLUMN display_order INT DEFAULT 0");
+            console.log('news_images 表添加了 display_order 列');
+        }
+    } catch (error) {
+        if (error.code === 'ER_NO_SUCH_TABLE') {
+            // 表不存在，创建它
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS news_images (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    news_id INT,
+                    image_path VARCHAR(255) NOT NULL,
+                    caption VARCHAR(255),
+                    display_order INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+                )
+            `);
+            console.log('news_images 表创建成功');
+        } else {
+            console.error('检查 news_images 表失败:', error);
+        }
+    }
+
     // 可以在这里添加其他表的检查和更新
 }
 
 module.exports = {
     testDatabaseConnection,
-    initDatabase
+    initDatabase,
+    checkAndUpdateTables
 };

@@ -1,6 +1,8 @@
 const express = require('express');
 const pool = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -19,11 +21,11 @@ router.get('/', async (req, res) => {
                 CREATE TABLE IF NOT EXISTS teachers (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(50) NOT NULL,
-                    title VARCHAR(100),
-                    department VARCHAR(50),
+                    contact VARCHAR(100),
                     avatar_url VARCHAR(255),
                     introduction TEXT,
                     order_num INT DEFAULT 1,
+                    status BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             `);
@@ -31,20 +33,20 @@ router.get('/', async (req, res) => {
             
             // 添加一些示例教师
             await pool.query(`
-                INSERT INTO teachers (name, title, department, introduction, order_num) VALUES 
-                ('张三', '教授', '数学系', '张三教授是我校资深教师，拥有20年教学经验...', 1),
-                ('李四', '副教授', '物理系', '李四副教授专注于量子物理研究，曾获多项科研奖项...', 2),
-                ('王五', '讲师', '计算机系', '王五讲师毕业于清华大学，专注于人工智能领域研究...', 3)
+                INSERT INTO teachers (name, contact, introduction, order_num, status) VALUES 
+                ('张三', '123456789', '张三是我校资深教师，拥有20年教学经验...', 1, TRUE),
+                ('李四', '987654321', '李四专注于科研，曾获多项科研奖项...', 2, TRUE),
+                ('王五', 'wangwu@example.com', '王五毕业于清华大学，专注于人工智能领域研究...', 3, TRUE)
             `);
         }
         
         // 获取教师列表
         const [teachers] = await pool.query('SELECT * FROM teachers ORDER BY order_num ASC');
         
-        res.json({ teachers });
+        res.json({ success: true, data: teachers });
     } catch (error) {
         console.error('获取教师列表失败:', error);
-        res.status(500).json({ message: '获取教师列表失败: ' + error.message });
+        res.status(500).json({ success: false, message: '获取教师列表失败: ' + error.message });
     }
 });
 
@@ -59,44 +61,50 @@ router.get('/:id', async (req, res) => {
         );
         
         if (teachers.length === 0) {
-            return res.status(404).json({ message: '教师不存在' });
+            return res.status(404).json({ success: false, message: '教师不存在' });
         }
         
-        res.json({ teacher: teachers[0] });
+        res.json({ success: true, data: teachers[0] });
     } catch (error) {
         console.error('获取教师详情失败:', error);
-        res.status(500).json({ message: '获取教师详情失败: ' + error.message });
+        res.status(500).json({ success: false, message: '获取教师详情失败: ' + error.message });
     }
 });
 
 // 添加教师
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { name, title, department, avatar_url, introduction, order_num } = req.body;
+        const { name, contact, introduction, status } = req.body;
         
         if (!name) {
-            return res.status(400).json({ message: '教师姓名不能为空' });
+            return res.status(400).json({ success: false, message: '教师姓名不能为空' });
         }
         
         const [result] = await pool.query(
-            'INSERT INTO teachers (name, title, department, avatar_url, introduction, order_num) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, title || null, department || null, avatar_url || null, introduction || null, order_num || 1]
+            'INSERT INTO teachers (name, contact, introduction, status) VALUES (?, ?, ?, ?)',
+            [name, contact || null, introduction || null, status === 'true' || status === true]
         );
         
         // 记录活动
         await pool.query(
             'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
-            [req.user.id, 'teachers', `添加了教师：${name}`]
+            [req.user.id, 'teachers', `添加了委员会成员：${name}`]
         );
         
         res.json({ 
             success: true, 
-            message: '教师添加成功', 
-            teacherId: result.insertId 
+            message: '委员会成员添加成功', 
+            data: {
+                id: result.insertId,
+                name,
+                contact,
+                introduction,
+                status: status === 'true' || status === true
+            }
         });
     } catch (error) {
-        console.error('添加教师失败:', error);
-        res.status(500).json({ message: '添加教师失败: ' + error.message });
+        console.error('添加委员会成员失败:', error);
+        res.status(500).json({ success: false, message: '添加委员会成员失败: ' + error.message });
     }
 });
 
@@ -104,31 +112,66 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const teacherId = req.params.id;
-        const { name, title, department, avatar_url, introduction, order_num } = req.body;
+        const { name, contact, introduction, status } = req.body;
         
         if (!name) {
-            return res.status(400).json({ message: '教师姓名不能为空' });
+            return res.status(400).json({ success: false, message: '教师姓名不能为空' });
         }
         
         const [result] = await pool.query(
-            'UPDATE teachers SET name = ?, title = ?, department = ?, avatar_url = ?, introduction = ?, order_num = ? WHERE id = ?',
-            [name, title || null, department || null, avatar_url || null, introduction || null, order_num || 1, teacherId]
+            'UPDATE teachers SET name = ?, contact = ?, introduction = ?, status = ? WHERE id = ?',
+            [name, contact || null, introduction || null, status === 'true' || status === true, teacherId]
         );
         
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: '教师不存在' });
+            return res.status(404).json({ success: false, message: '委员会成员不存在' });
         }
         
         // 记录活动
         await pool.query(
             'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
-            [req.user.id, 'teachers', `更新了教师：${name}`]
+            [req.user.id, 'teachers', `更新了委员会成员：${name}`]
         );
         
-        res.json({ success: true, message: '教师更新成功' });
+        res.json({ success: true, message: '委员会成员更新成功' });
     } catch (error) {
-        console.error('更新教师失败:', error);
-        res.status(500).json({ message: '更新教师失败: ' + error.message });
+        console.error('更新委员会成员失败:', error);
+        res.status(500).json({ success: false, message: '更新委员会成员失败: ' + error.message });
+    }
+});
+
+// 更新教师排序
+router.put('/order', authenticateToken, async (req, res) => {
+    try {
+        const { order } = req.body;
+        
+        if (!order || !Array.isArray(order)) {
+            return res.status(400).json({ success: false, message: '排序数据格式不正确' });
+        }
+        
+        // 使用事务进行批量更新
+        await pool.query('START TRANSACTION');
+        
+        for (const item of order) {
+            await pool.query(
+                'UPDATE teachers SET order_num = ? WHERE id = ?',
+                [item.order, item.id]
+            );
+        }
+        
+        await pool.query('COMMIT');
+        
+        // 记录活动
+        await pool.query(
+            'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
+            [req.user.id, 'teachers', '更新了委员会成员排序']
+        );
+        
+        res.json({ success: true, message: '委员会成员排序更新成功' });
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        console.error('更新委员会成员排序失败:', error);
+        res.status(500).json({ success: false, message: '更新委员会成员排序失败: ' + error.message });
     }
 });
 
@@ -140,7 +183,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         // 获取教师姓名用于活动记录
         const [teachers] = await pool.query('SELECT name FROM teachers WHERE id = ?', [teacherId]);
         if (teachers.length === 0) {
-            return res.status(404).json({ message: '教师不存在' });
+            return res.status(404).json({ success: false, message: '委员会成员不存在' });
         }
         
         const [result] = await pool.query('DELETE FROM teachers WHERE id = ?', [teacherId]);
@@ -148,13 +191,48 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         // 记录活动
         await pool.query(
             'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
-            [req.user.id, 'teachers', `删除了教师：${teachers[0].name}`]
+            [req.user.id, 'teachers', `删除了委员会成员：${teachers[0].name}`]
         );
         
-        res.json({ success: true, message: '教师删除成功' });
+        res.json({ success: true, message: '委员会成员删除成功' });
     } catch (error) {
-        console.error('删除教师失败:', error);
-        res.status(500).json({ message: '删除教师失败: ' + error.message });
+        console.error('删除委员会成员失败:', error);
+        res.status(500).json({ success: false, message: '删除委员会成员失败: ' + error.message });
+    }
+});
+
+// 更新team.html页面内容
+router.post('/update-team-html', authenticateToken, async (req, res) => {
+    try {
+        const { html } = req.body;
+        
+        if (!html) {
+            return res.status(400).json({ success: false, message: 'HTML内容不能为空' });
+        }
+        
+        // 确定team.html文件的路径（相对于项目根目录）
+        const teamHtmlPath = path.join(__dirname, '..', 'team.html');
+        
+        // 写入文件
+        fs.writeFile(teamHtmlPath, html, 'utf8', (err) => {
+            if (err) {
+                console.error('写入team.html文件失败:', err);
+                return res.status(500).json({ success: false, message: '写入team.html文件失败: ' + err.message });
+            }
+            
+            // 记录活动
+            pool.query(
+                'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
+                [req.user.id, 'website', '更新了青年委员会页面']
+            ).catch(error => {
+                console.error('记录活动失败:', error);
+            });
+            
+            res.json({ success: true, message: 'team.html页面更新成功' });
+        });
+    } catch (error) {
+        console.error('更新team.html页面失败:', error);
+        res.status(500).json({ success: false, message: '更新team.html页面失败: ' + error.message });
     }
 });
 

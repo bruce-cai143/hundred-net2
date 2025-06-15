@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青年委员会 - 未来科技中学</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="gallery.html">图片墙</a>
+                <a href="team.html" class="active">青年委员会</a>
+                <a href="download.html">资料下载</a>
+                <a href="contact.html">百人计划</a>
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <section class="about-section">
+            <h1 class="section-title">青年委员会</h1>
+            <div class="teachers-grid">
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher1.jpg" alt="张伟老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">张伟</h3>
+                        <p class="teacher-description">1</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher2.jpg" alt="李娜老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">李娜</h3>
+                        <p class="teacher-description">2</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher3.jpg" alt="王刚老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">王刚</h3>
+                        <p class="teacher-description">3</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher4.jpg" alt="陈梅老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">陈梅</h3>
+                        <p class="teacher-description">4</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher5.jpg" alt="赵华老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">赵华</h3>
+                        <p class="teacher-description">5</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-image">
+                        <img src="assets/images/teacher6.jpg" alt="刘芳老师">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">刘芳</h3>
+                        <p class="teacher-description">6</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo">
+                
+                
+            </div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                    <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
+                    <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
+                </div>
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="im.html" class="button ghost">学校简介</a>
+                    <a href="https://www.tfswgz.com/" class="button ghost">高中部</a>
+                    <a href="https://www.cdswxq.com/" class="button ghost">实外西区</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：万安街道麓山大道二段533号</p>
+                    <p>电话：(028)61909605</p>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 DIGIT 计算机社团 <a href="admin/login.html" class="admin-link">管理入口</a></p>
+        </div>
+    </footer>
+
+    <script src="scripts/main.js"></script>
+</body>
+</html>

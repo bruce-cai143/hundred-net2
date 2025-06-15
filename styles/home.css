@@ -344,11 +344,14 @@ body.subtle-bg {
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     margin: 3rem auto;
+    max-width: 800px !important;
+    width: 80% !important;
 }
 
 .campus-video {
     display: block;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
     border-radius: var(--border-radius);
     transition: transform 0.5s ease;
 }
@@ -440,6 +443,18 @@ body.subtle-bg {
         width: 70px;
         height: 70px;
         font-size: 1.5rem;
+    }
+    
+    .video-container {
+        max-width: 95%;
+        margin: 2rem auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .video-container {
+        max-width: 90%;
+        margin: 1.5rem auto;
     }
 }
 

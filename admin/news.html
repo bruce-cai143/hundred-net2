@@ -7,130 +7,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/nav.css">
-    <style>
-        .news-form {
-            margin: 20px 0;
-            padding: 20px;
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            width: 100%;
-        }
-        .news-form input[type="text"],
-        .news-form textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .news-form textarea {
-            min-height: 200px;
-        }
-        .image-upload {
-            margin: 15px 0;
-            padding: 15px;
-            border: 2px dashed #ddd;
-            border-radius: 4px;
-            text-align: center;
-        }
-        .image-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .image-item {
-            position: relative;
-            width: 150px;
-        }
-        .image-item img {
-            width: 100%;
-            height: auto;
-            border-radius: 4px;
-        }
-        .image-item .remove-image {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255,0,0,0.7);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-        }
-        .image-caption {
-            width: 100%;
-            margin-top: 5px;
-            font-size: 12px;
-        }
-        .news-list {
-            margin-top: 30px;
-            width: 100%;
-        }
-        .news-item {
-            padding: 15px;
-            margin-bottom: 10px;
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .news-item-title {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        .news-item-meta {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        .news-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .btn-edit,
-        .btn-delete,
-        .btn-view {
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-edit {
-            background: #4CAF50;
-            color: white;
-        }
-        .btn-delete {
-            background: #f44336;
-            color: white;
-        }
-        .btn-view {
-            background: #2196F3;
-            color: white;
-        }
-        .pagination {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .pagination button {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-        }
-        .pagination button.active {
-            background: #2196F3;
-            color: white;
-            border-color: #2196F3;
-        }
-    </style>
+    <link rel="stylesheet" href="css/news.css">
 </head>
 <body>
-    <div class="admin-container">
         <!-- 侧边栏 -->
         <div class="sidebar">
             <div class="sidebar-header">
@@ -165,11 +44,16 @@
 
             <!-- 新闻管理内容 -->
             <div class="container-fluid">
-                <h2>新闻管理</h2>
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="mb-0">新闻管理</h1>
+                </div>
             
-            <div class="news-form" style="width: 100%; max-width: none;">
-                <h3 id="formTitle">添加新闻</h3>
-                <form id="newsForm">
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0" id="formTitle"><i class="bi bi-pencil-square text-primary me-2"></i>添加新闻</h5>
+                </div>
+                <div class="card-body news-form">
+                    <form id="newsForm" class="needs-validation" novalidate>
                     <input type="hidden" id="newsId">
                     <div>
                         <label for="title">标题：</label>
@@ -188,20 +72,29 @@
                         <textarea id="content" name="content" required></textarea>
                     </div>
                     <div class="image-upload">
-                        <label for="images">上传图片（最多5张）：</label>
+                        <label for="images">点击上传图片（最多5张）：</label>
                         <input type="file" id="images" name="images" multiple accept="image/*">
                         <div class="image-preview" id="imagePreview"></div>
                     </div>
-                    <button type="submit" class="btn-primary">发布新闻</button>
-                    <button type="button" id="cancelEdit" class="btn-secondary" style="display: none;">取消编辑</button>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">发布新闻</button>
+                        <button type="button" id="cancelEdit" class="btn btn-secondary" style="display: none;">取消编辑</button>
+                    </div>
                 </form>
+                </div>
             </div>
 
-            <div class="news-list" id="newsList"></div>
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ul text-primary me-2"></i>新闻列表</h5>
+                </div>
+                <div class="card-body">
+                    <div class="news-list" id="newsList"></div>
+                </div>
+            </div>
             <div class="pagination" id="pagination"></div>
             </div>
         </div>
-    </div>
 
     <!-- 退出确认对话框 -->
     <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
@@ -222,327 +115,7 @@
         </div>
     </div>
 
-    <!-- <script src="js/admin-utils.js" type="module"></script> -->
-    <script >
-        // 导入工具函数
-        // import { checkAuth, logout } from './js/admin-utils.js';
-
-        // 获取新闻列表
-        async function getNewsList(page = 1) {
-            console.log('get token:', localStorage);
-            // const token = localStorage.getItem('adminToken');
-            // console.log('token:', token);
-            // if (!token) {
-            //     window.location.href = 'login.html';
-            //     return;
-            // }
-            try {
-                const response = await fetch(`/api/news`
-                // , {
-                //     headers: {
-                //         'Authorization': `Bearer ${token}`
-                //     }
-                // }
-            );
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '获取新闻列表失败');
-                }
-                
-                displayNewsList(data.news);
-                displayPagination(data.pagination);
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-
-        // 显示新闻列表
-        function displayNewsList(news) {
-            const newsListElement = document.getElementById('newsList');
-            newsListElement.innerHTML = news.map(item => `
-                <div class="news-item">
-                    <div class="news-item-title">${item.title}</div>
-                    <div class="news-item-meta">
-                        ${item.author ? `作者：${item.author} | ` : ''}
-                        发布时间：${new Date(item.created_at).toLocaleString()}
-                    </div>
-                    <div class="news-actions">
-                        <button class="btn-view" onclick="viewNews(${item.id})">查看</button>
-                        <button class="btn-edit" onclick="editNews(${item.id})">编辑</button>
-                        <button class="btn-delete" onclick="deleteNews(${item.id})">删除</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 显示分页
-        function displayPagination(pagination) {
-            const paginationElement = document.getElementById('pagination');
-            const pages = [];
-            
-            for (let i = 1; i <= pagination.totalPages; i++) {
-                pages.push(`
-                    <button 
-                        ${pagination.page === i ? 'class="active"' : ''}
-                        onclick="getNewsList(${i})"
-                    >${i}</button>
-                `);
-            }
-            
-            paginationElement.innerHTML = pages.join('');
-        }
-
-        // 图片预览
-        document.getElementById('images').addEventListener('change', function(event) {
-            const preview = document.getElementById('imagePreview');
-            preview.innerHTML = '';
-            
-            Array.from(event.target.files).forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-item';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="预览图片">
-                        <button type="button" class="remove-image" onclick="removeImage(${index})">×</button>
-                        <input type="text" class="image-caption" name="caption_${index}" placeholder="图片说明">
-                    `;
-                    preview.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-
-        // 删除预览图片
-        function removeImage(index) {
-            const input = document.getElementById('images');
-            const preview = document.getElementById('imagePreview');
-            
-            const dt = new DataTransfer();
-            const { files } = input;
-            
-            for (let i = 0; i < files.length; i++) {
-                if (i !== index) {
-                    dt.items.add(files[i]);
-                }
-            }
-            
-            input.files = dt.files;
-            preview.children[index].remove();
-            
-            // 更新其他图片的caption索引
-            Array.from(preview.children).forEach((item, i) => {
-                const caption = item.querySelector('.image-caption');
-                caption.name = `caption_${i}`;
-            });
-        }
-
-        const form = document.getElementById('newsForm')
-
-        // 提交表单
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            //const token = checkAuth();
-            // const formData = new FormData(form);
-            // console.log("formData:", formData);
-            console.log("title:", document.getElementById('title').value)
-            console.log("category:", document.getElementById('category').value)
-            console.log("content:", document.getElementById('content').value)
-            console.log("author:",document.getElementById('author').value)
-
-
-                // 获取表单数据
-            const formData = new FormData(form);
-            const jsonData = {};
-            formData.forEach((value, key) => {
-                jsonData[key] = value;
-            });
-
-            // 处理图片字段
-            const images = [];
-            for (let i = 0; i < formData.getAll('images').length; i++) {
-                images.push({
-                    image: formData.getAll('images')[i],
-                    caption: formData.get(`caption_${i}`)
-                });
-            }
-            jsonData.images = images;
-
-            console.log("jsonData:", jsonData);
-            // const formData = new FormData(this);
-            const newsId = document.getElementById('newsId').value;
-            
-
-            
-            try {
-                const url = newsId ? 
-                    `/api/news/${newsId}` : 
-                    '/api/news';
-                
-                const method = newsId ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
-                    // headers: {
-                    //     'Authorization': `Bearer ${token}`
-                    // },
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(jsonData)
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '操作失败');
-                }
-                
-                alert(data.message);
-                resetForm();
-                getNewsList();
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-
-        // 重置表单
-        function resetForm() {
-            document.getElementById('newsForm').reset();
-            document.getElementById('newsId').value = '';
-            document.getElementById('formTitle').textContent = '添加新闻';
-            document.getElementById('cancelEdit').style.display = 'none';
-            document.getElementById('imagePreview').innerHTML = '';
-        }
-
-        // 编辑新闻
-        async function editNews(id) {
-            //const token = checkAuth();
-            try {
-                const response = await fetch(`/api/news-manager/${id}`
-                // , {
-                //     headers: {
-                //         'Authorization': `Bearer ${token}`
-                //     }
-                // }
-            );
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '获取新闻信息失败');
-                }
-                
-                const news = data.news;
-                
-                document.getElementById('newsId').value = news.id;
-                document.getElementById('title').value = news.title;
-                document.getElementById('author').value = news.author || '';
-                document.getElementById('content').value = news.content;
-                document.getElementById('formTitle').textContent = '编辑新闻';
-                document.getElementById('cancelEdit').style.display = 'inline-block';
-                
-                // 显示现有图片
-                const preview = document.getElementById('imagePreview');
-                preview.innerHTML = '';
-                
-                if (news.images) {
-                    news.images.forEach((image, index) => {
-                        const div = document.createElement('div');
-                        div.className = 'image-item';
-                        div.innerHTML = `
-                            <img src="${image.image_path}" alt="新闻图片">
-                            <button type="button" class="remove-image" onclick="deleteNewsImage(${image.id})">×</button>
-                            <input type="text" class="image-caption" name="caption_${index}" value="${image.caption || ''}" placeholder="图片说明">
-                        `;
-                        preview.appendChild(div);
-                    });
-                }
-                
-                window.scrollTo(0, 0);
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-
-        // 删除新闻图片
-        async function deleteNewsImage(imageId) {
-            if (!confirm('确定要删除这张图片吗？')) return;
-            
-            //const token = checkAuth();
-            try {
-                const response = await fetch(`/api/news-manager/image/${imageId}`, {
-                    method: 'DELETE',
-                    // headers: {
-                    //     'Authorization': `Bearer ${token}`
-                    // }
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '删除图片失败');
-                }
-                
-                // 重新加载编辑表单
-                const newsId = document.getElementById('newsId').value;
-                if (newsId) {
-                    editNews(newsId);
-                }
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-
-        // 删除新闻
-        async function deleteNews(id) {
-            if (!confirm('确定要删除这条新闻吗？')) return;
-            
-            //const token = checkAuth();
-            try {
-                const response = await fetch(`/api/news-manager/${id}`, {
-                    method: 'DELETE',
-                    // headers: {
-                    //     'Authorization': `Bearer ${token}`
-                    // }
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '删除新闻失败');
-                }
-                
-                alert(data.message);
-                getNewsList();
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-
-        // 查看新闻
-        function viewNews(id) {
-            window.open(`/news/${id}`, '_blank');
-        }
-
-        // 取消编辑
-        document.getElementById('cancelEdit').addEventListener('click', resetForm);
-
-        // 退出登录功能由 admin-utils.js 处理
-
-        // 初始化
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                console.log('初始化新闻管理页面...')
-                // const isAuthenticated = await checkAuth();
-                // if (isAuthenticated) {
-                    await getNewsList();
-                // }
-            } catch (error) {
-                console.error('初始化失败:', error);
-            }
-        });
-    </script>
+    <script src="js/admin-utils.js" type="module"></script>
+    <script src="js/news.js" type="module"></script>
 </body>
 </html>

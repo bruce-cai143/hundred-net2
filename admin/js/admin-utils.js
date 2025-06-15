@@ -18,24 +18,46 @@ function formatDate(dateString) {
     });
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // 自动消失
-    setTimeout(() => {
-        notification.classList.add('fade-out');
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
+// 显示提示信息
+function showToast(type, message) {
+    // 如果页面中已经有toast插件，使用它
+    if (window.Swal) {
+        Swal.fire({
+            icon: type === 'success' ? 'success' : 'error',
+            title: type === 'success' ? '成功' : '错误',
+            text: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    } else {
+        // 否则使用简单的原生方式
+        alert(message);
+    }
+}
+
+// 确认删除对话框
+async function confirmDelete(message) {
+    if (window.Swal) {
+        const result = await Swal.fire({
+            title: '确认删除',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: '确定删除',
+            cancelButtonText: '取消'
+        });
+        return result.isConfirmed;
+    } else {
+        return confirm(message);
+    }
 }
 
 // 检查登录状态
-async function checkAuth() {
+async function checkLogin() {
     try {
         // 验证会话状态
         const response = await fetch('/api/auth/me', {
@@ -52,6 +74,43 @@ async function checkAuth() {
         console.error('验证登录状态失败:', error);
         window.location.href = '/admin/login.html';
         return false;
+    }
+}
+
+// API请求封装
+async function apiRequest(url, options = {}, isFormData = false) {
+    try {
+        // 设置默认选项
+        const defaultOptions = {
+            method: 'GET',
+            credentials: 'include', // 确保发送cookie
+            headers: !isFormData ? { 'Content-Type': 'application/json' } : {}
+        };
+        
+        // 合并选项
+        const mergedOptions = { ...defaultOptions, ...options };
+        
+        // 发送请求
+        const response = await fetch(url, mergedOptions);
+        
+        // 处理未授权响应
+        if (response.status === 401) {
+            window.location.href = '/admin/login.html';
+            throw new Error('未登录或会话已过期');
+        }
+        
+        // 解析响应JSON
+        const data = await response.json();
+        
+        // 如果响应包含错误字段，则抛出错误
+        if (!data.success && data.message) {
+            throw new Error(data.message);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('API请求失败:', error);
+        throw error;
     }
 }
 
@@ -88,25 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initLogout();
 });
 
-// 为所有请求添加认证
-async function authenticatedFetch(url, options = {}) {
-    try {
-        const response = await fetch(url, { 
-            ...options, 
-            credentials: 'include'  // 确保发送cookie
-        });
-        
-        if (response.status === 401) {
-            window.location.href = '/admin/login.html';
-            throw new Error('未登录或会话已过期');
-        }
-        return response;
-    } catch (error) {
-        console.error('请求失败:', error);
-        throw error;
-    }
-}
-
 // 防抖函数
 function debounce(func, wait) {
     let timeout;
@@ -138,10 +178,11 @@ function getFileIcon(fileType) {
 export {
     formatFileSize,
     formatDate,
-    showNotification,
-    checkAuth,
+    showToast,
+    confirmDelete,
+    checkLogin,
+    apiRequest,
     logout,
-    authenticatedFetch,
     debounce,
     getFileIcon
 };

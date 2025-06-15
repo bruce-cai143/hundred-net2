@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
 const { PORT } = require('./config/config');
-const { testDatabaseConnection, initDatabase } = require('./db/init');
+const { testDatabaseConnection, initDatabase, checkAndUpdateTables } = require('./db/init');
 
 // 立即初始化数据库
 (async () => {
@@ -26,9 +26,10 @@ const usersRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
 const navigationRoutes = require('./routes/navigation');
-const downloadsRoutes = require('./server/routes/downloads');
+const downloadsRoutes = require('./routes/downloads');
 const mediaRoutes = require('./routes/media');
 const countRoutes = require('./routes/api/count');
+const apiRoutes = require('./routes/api');
 
 // 创建Express应用
 const app = express();
@@ -94,6 +95,7 @@ app.use('/api/news', newsRoutes);
 app.use('/api/slides', slidesRoutes);
 app.use('/api/teachers', teachersRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api', apiRoutes);
 
 // 配置静态资源
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -117,6 +119,8 @@ app.get('/js/main.js', (req, res) => {
     
     if (dbConnected) {
         await initDatabase();
+        // 检查并更新表结构
+        await checkAndUpdateTables();
         
         // 启动服务器
         let currentPort = PORT;

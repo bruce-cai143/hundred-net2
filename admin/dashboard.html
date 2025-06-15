@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理面板 - 实外西区百人计划</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/admin.css">
+</head>
+<body>
+    <div class="admin-dashboard">
+        <nav class="admin-nav">
+            <h2>内容管理</h2>
+            <ul>
+                <li><a href="#news" class="active">新闻管理</a></li>
+                <li><a href="#courses">课程管理</a></li>
+                <li><a href="#files">文件管理</a></li>
+                <li><a href="#carousel">轮播图管理</a></li>
+                <li><a href="../index.html">返回网站</a></li>
+                <li><a href="#" id="logoutBtn">退出登录</a></li>
+            </ul>
+        </nav>
+        <main class="admin-content">
+            <!-- 新闻管理 -->
+            <div id="newsManager" class="content-section active">
+                <h3>新闻管理</h3>
+                <button class="button" id="addNewsBtn">添加新闻</button>
+                <div class="admin-list" id="newsList"></div>
+            </div>
+            
+            <!-- 课程管理 -->
+            <div id="coursesManager" class="content-section">
+                <h3>课程管理</h3>
+                <button class="button" id="addCourseBtn">添加课程</button>
+                <div class="admin-list" id="coursesList"></div>
+            </div>
+            
+            <!-- 文件管理 -->
+            <div id="filesManager" class="content-section">
+                <h3>文件管理</h3>
+                <form id="fileUploadForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="fileTitle">文件标题</label>
+                        <input type="text" id="fileTitle" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileDescription">文件描述</label>
+                        <textarea id="fileDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileCategory">分类</label>
+                        <select id="fileCategory" name="category">
+                            <option value="教学资料">教学资料</option>
+                            <option value="招生简章">招生简章</option>
+                            <option value="通知公告">通知公告</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileUpload">选择文件</label>
+                        <input type="file" id="fileUpload" name="file" required>
+                    </div>
+                    <button type="submit" class="button">上传文件</button>
+                </form>
+                <div class="admin-list" id="filesList"></div>
+            </div>
+            
+            <!-- 轮播图管理 -->
+            <div id="carouselManager" class="content-section">
+                <h3>轮播图管理</h3>
+                <form id="carouselUploadForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="slideTitle">标题</label>
+                        <input type="text" id="slideTitle" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="slideDescription">描述</label>
+                        <input type="text" id="slideDescription" name="description">
+                    </div>
+                    <div class="form-group">
+                        <label for="slideImage">选择图片</label>
+                        <input type="file" id="slideImage" name="image" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="button">添加轮播图</button>
+                </form>
+                <div class="admin-list" id="slidesList"></div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 模态框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 id="modalTitle">添加内容</h3>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <script src="../scripts/dashboard.js"></script>
+</body>
+</html>

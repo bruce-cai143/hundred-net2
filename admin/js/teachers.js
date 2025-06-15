@@ -1,230 +1,544 @@
-// 教师管理功能
+// 青年委员会管理模块
+import { checkLogin, apiRequest, showToast, confirmDelete } from './admin-utils.js';
 
-// DOM 元素
-document.addEventListener('DOMContentLoaded', async function() {
-    // 检查认证状态
-    const { checkAuth, logout } = await import('./admin-utils.js');
-    await checkAuth();
+// 页面初始化
+document.addEventListener('DOMContentLoaded', async () => {
+    // 检查登录状态
+    await checkLogin();
+    
+    // 初始化表单事件
+    initFormHandlers();
+    
+    // 加载委员会成员列表
+    fetchTeachersList();
+});
 
-    // 绑定退出登录事件
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
-
-    const teachersTable = document.getElementById('teachers-table');
-    const addTeacherBtn = document.getElementById('add-teacher-btn');
-    const teacherModal = document.getElementById('teacher-modal');
+// 初始化表单处理
+function initFormHandlers() {
+    // 委员会成员添加表单
     const teacherForm = document.getElementById('teacher-form');
-    const avatarPreview = document.getElementById('avatar-preview');
+    teacherForm.addEventListener('submit', handleTeacherSubmit);
+    
+    // 初始化图片预览
+    initImagePreview('teacher-avatar', 'avatar-preview');
+    initImagePreview('edit-teacher-avatar', 'edit-avatar-preview');
+    
+    // 委员会成员更新按钮
+    const updateTeacherBtn = document.getElementById('update-teacher');
+    updateTeacherBtn.addEventListener('click', handleTeacherUpdate);
+}
 
-// 获取教师列表
-async function getTeachers() {
-    try {
-        const response = await fetch('/api/teachers');
-        const data = await response.json();
-        if (response.ok) {
-            renderTeachers(data);
-            updateDashboardCount(data.length);
-        } else {
-            showToast('error', '获取教师列表失败');
+// 初始化图片预览
+function initImagePreview(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    
+    input.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
         }
+    });
+}
+
+// 获取委员会成员列表
+async function fetchTeachersList() {
+    try {
+        // 首先尝试从API获取
+        let teachers = [];
+        try {
+            const response = await apiRequest('/api/teachers');
+            if (response.success) {
+                teachers = response.data;
+            }
+        } catch (error) {
+            console.warn('API获取委员会成员失败，将尝试从team.html页面获取');
+        }
+        
+        // 如果API没有数据或失败，从team.html页面获取
+        if (teachers.length === 0) {
+            teachers = await fetchTeachersFromTeamPage();
+        }
+        
+        renderTeachersTable(teachers);
     } catch (error) {
-        console.error('获取教师列表出错:', error);
-        showToast('error', '获取教师列表出错');
+        showToast('error', '获取委员会成员列表时发生错误');
+        console.error('Error fetching teachers:', error);
     }
 }
 
-// 渲染教师列表
-function renderTeachers(teachers) {
-    const tbody = teachersTable.querySelector('tbody');
-    tbody.innerHTML = '';
+// 从team.html页面获取委员会成员数据
+async function fetchTeachersFromTeamPage() {
+    try {
+        const response = await fetch('/team.html');
+        const htmlText = await response.text();
+        
+        // 创建一个临时的DOM元素来解析HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        
+        // 查找所有教师卡片
+        const teacherCards = doc.querySelectorAll('.teacher-card');
+        
+        // 提取教师信息
+        const teachers = Array.from(teacherCards).map((card, index) => {
+            const name = card.querySelector('.teacher-name')?.textContent.trim() || '';
+            const description = card.querySelector('.teacher-description')?.textContent.trim() || '';
+            const imgSrc = card.querySelector('.teacher-image img')?.getAttribute('src') || '';
+            
+            return {
+                _id: `team-${index + 1}`, // 生成一个临时ID
+                name: name,
+                contact: '', // team.html中可能没有联系方式
+                introduction: description,
+                avatar: imgSrc,
+                status: true, // 假设所有展示的成员都是在职的
+                displayOrder: index + 1 // 显示顺序
+            };
+        });
+        
+        return teachers;
+    } catch (error) {
+        console.error('从team.html获取教师数据失败:', error);
+        return [];
+    }
+}
+
+// 渲染委员会成员表格
+function renderTeachersTable(teachers) {
+    const tableBody = document.getElementById('teachers-table');
+    tableBody.innerHTML = '';
     
-    teachers.forEach((teacher) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <img src="${teacher.avatar || 'https://via.placeholder.com/40'}" alt="${teacher.name}" class="rounded-circle" style="width: 40px; height: 40px;">
-            </td>
+    if (teachers.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="7" class="text-center">暂无委员会成员数据</td>';
+        tableBody.appendChild(emptyRow);
+        return;
+    }
+    
+    // 按显示顺序排序
+    teachers.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    
+    teachers.forEach((teacher, index) => {
+        const row = document.createElement('tr');
+        row.dataset.id = teacher._id;
+        row.innerHTML = `
+            <td><i class="bi bi-grip-vertical handle"></i></td>
+            <td>${index + 1}</td>
+            <td><img src="${teacher.avatar || '../assets/icon/default-avatar.png'}" alt="${teacher.name}" class="avatar-thumbnail"></td>
             <td>${teacher.name}</td>
-            <td>${teacher.title}</td>
-            <td>${teacher.department}</td>
-            <td>${teacher.email}</td>
-            <td>${teacher.phone}</td>
-            <td>
-                <button class="btn btn-sm btn-primary me-1" onclick="editTeacher(${teacher.id})">
+            <td>${teacher.contact || ''}</td>
+            <td>${teacher.status ? '<span class="badge bg-success">在职</span>' : '<span class="badge bg-secondary">离职</span>'}</td>
+            <td class="action-buttons">
+                <button type="button" class="btn btn-sm btn-primary edit-teacher" data-id="${teacher._id}">
                     <i class="bi bi-pencil"></i> 编辑
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteTeacher(${teacher.id})">
+                <button type="button" class="btn btn-sm btn-danger delete-teacher" data-id="${teacher._id}">
                     <i class="bi bi-trash"></i> 删除
                 </button>
             </td>
         `;
-        tbody.appendChild(tr);
+        tableBody.appendChild(row);
     });
+    
+    // 绑定编辑按钮事件
+    document.querySelectorAll('.edit-teacher').forEach(button => {
+        button.addEventListener('click', function() {
+            const teacherId = this.getAttribute('data-id');
+            openEditTeacherModal(teacherId, teachers);
+        });
+    });
+    
+    // 绑定删除按钮事件
+    document.querySelectorAll('.delete-teacher').forEach(button => {
+        button.addEventListener('click', function() {
+            const teacherId = this.getAttribute('data-id');
+            handleTeacherDelete(teacherId);
+        });
+    });
+    
+    // 初始化排序功能
+    initSortable(teachers);
 }
 
-// 头像预览
-function previewAvatar(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            avatarPreview.src = e.target.result;
-            avatarPreview.style.display = 'block';
-        };
-        reader.readAsDataURL(input.files[0]);
+// 初始化排序功能
+function initSortable(teachers) {
+    const tbody = document.getElementById('teachers-table');
+    
+    if (window.Sortable) {
+        new Sortable(tbody, {
+            handle: '.handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                updateTeachersOrder();
+            }
+        });
     }
 }
 
-// 添加教师
-async function addTeacher(formData) {
+// 更新教师顺序
+async function updateTeachersOrder() {
+    const tbody = document.getElementById('teachers-table');
+    const rows = tbody.querySelectorAll('tr');
+    
+    const orderData = Array.from(rows).map((row, index) => {
+        const id = row.dataset.id;
+        return { id, order: index + 1 };
+    });
+    
     try {
-        const response = await fetch('/api/teachers', {
-            method: 'POST',
-            body: formData
+        // 尝试使用API更新顺序
+        const response = await apiRequest('/api/teachers/order', {
+            method: 'PUT',
+            body: JSON.stringify({ order: orderData }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
-        if (response.ok) {
-            showToast('success', '添加教师成功');
-            getTeachers();
-            closeModal();
+        if (response.success) {
+            showToast('success', '委员会成员排序更新成功');
         } else {
-            const error = await response.json();
-            showToast('error', error.message || '添加教师失败');
+            console.warn('API更新顺序失败，将尝试更新team.html');
+            await updateTeamHtml();
         }
     } catch (error) {
-        console.error('添加教师出错:', error);
-        showToast('error', '添加教师出错');
+        console.warn('API更新顺序发生错误，将尝试更新team.html:', error);
+        await updateTeamHtml();
     }
 }
 
-// 编辑教师
-async function editTeacher(id) {
+// 处理委员会成员表单提交
+async function handleTeacherSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // 收集表单数据
+    const teacherData = {
+        name: formData.get('name'),
+        contact: formData.get('contact'),
+        introduction: formData.get('introduction'),
+        status: formData.has('status')
+    };
+    
     try {
-        const response = await fetch(`/api/teachers/${id}`);
-        const teacher = await response.json();
+        // 尝试使用API添加
+        let success = false;
+        let newTeacher = null;
         
-        if (response.ok) {
-            // 填充表单
-            teacherForm.name.value = teacher.name;
-            teacherForm.title.value = teacher.title;
-            teacherForm.department.value = teacher.department;
-            teacherForm.email.value = teacher.email;
-            teacherForm.phone.value = teacher.phone;
-            if (teacher.avatar) {
-                avatarPreview.src = teacher.avatar;
-                avatarPreview.style.display = 'block';
+        try {
+            const response = await apiRequest('/api/teachers', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    // 不设置Content-Type，让浏览器自动设置包含boundary的multipart/form-data
+                }
+            }, true);
+            
+            if (response.success) {
+                success = true;
+                newTeacher = response.data;
+                showToast('success', '委员会成员添加成功');
+            }
+        } catch (error) {
+            console.warn('API添加委员会成员失败，将尝试直接更新team.html');
+        }
+        
+        // 如果API添加失败，尝试直接更新team.html
+        if (!success) {
+            // 生成一个临时ID
+            newTeacher = {
+                _id: `temp-${Date.now()}`,
+                ...teacherData,
+                displayOrder: 999 // 放在最后
+            };
+            
+            // 处理头像文件
+            const avatarFile = formData.get('avatar');
+            if (avatarFile && avatarFile.size > 0) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    newTeacher.avatar = e.target.result;
+                    // 获取当前列表并添加新成员
+                    const teachers = await fetchTeachersFromTeamPage();
+                    teachers.push(newTeacher);
+                    // 渲染表格并更新team.html
+                    renderTeachersTable(teachers);
+                    await updateTeamHtml(teachers);
+                };
+                reader.readAsDataURL(avatarFile);
+            } else {
+                newTeacher.avatar = '../assets/icon/default-avatar.png';
+                // 获取当前列表并添加新成员
+                const teachers = await fetchTeachersFromTeamPage();
+                teachers.push(newTeacher);
+                // 渲染表格并更新team.html
+                renderTeachersTable(teachers);
+                await updateTeamHtml(teachers);
             }
             
-            // 更新模态框
-            teacherModal.querySelector('.modal-title').textContent = '编辑教师';
-            teacherForm.dataset.id = id;
+            showToast('success', '委员会成员添加成功（直接更新了team.html页面）');
+        }
+        
+        // 重置表单
+        form.reset();
+        document.getElementById('avatar-preview').src = '../assets/icon/default-avatar.png';
+        
+        // 刷新列表
+        fetchTeachersList();
+    } catch (error) {
+        showToast('error', '添加委员会成员时发生错误');
+        console.error('Error adding teacher:', error);
+    }
+}
+
+// 打开编辑委员会成员模态框
+function openEditTeacherModal(teacherId, teachers) {
+    const teacher = teachers.find(t => t._id === teacherId);
+    if (!teacher) return;
+    
+    // 填充表单数据
+    document.getElementById('edit-teacher-id').value = teacher._id;
+    document.getElementById('edit-teacher-name').value = teacher.name;
+    document.getElementById('edit-teacher-contact').value = teacher.contact || '';
+    document.getElementById('edit-teacher-introduction').value = teacher.introduction || '';
+    document.getElementById('edit-teacher-status').checked = teacher.status;
+    
+    // 设置头像预览
+    const avatarPreview = document.getElementById('edit-avatar-preview');
+    avatarPreview.src = teacher.avatar || '../assets/icon/default-avatar.png';
+    
+    // 显示模态框
+    const editModal = new bootstrap.Modal(document.getElementById('editTeacherModal'));
+    editModal.show();
+}
+
+// 处理委员会成员更新
+async function handleTeacherUpdate() {
+    const teacherId = document.getElementById('edit-teacher-id').value;
+    const form = document.getElementById('edit-teacher-form');
+    const formData = new FormData(form);
+    
+    // 收集更新的数据
+    const updatedTeacher = {
+        _id: teacherId,
+        name: document.getElementById('edit-teacher-name').value,
+        contact: document.getElementById('edit-teacher-contact').value,
+        introduction: document.getElementById('edit-teacher-introduction').value,
+        status: document.getElementById('edit-teacher-status').checked
+    };
+    
+    try {
+        // 尝试使用API更新
+        let success = false;
+        
+        try {
+            const response = await apiRequest(`/api/teachers/${teacherId}`, {
+                method: 'PUT',
+                body: formData,
+                headers: {
+                    // 不设置Content-Type，让浏览器自动设置包含boundary的multipart/form-data
+                }
+            }, true);
             
-            // 显示模态框
-            const modal = new bootstrap.Modal(teacherModal);
-            modal.show();
-        } else {
-            showToast('error', '获取教师信息失败');
+            if (response.success) {
+                success = true;
+                showToast('success', '委员会成员信息更新成功');
+            }
+        } catch (error) {
+            console.warn('API更新委员会成员失败，将尝试直接更新team.html');
         }
+        
+        // 如果API更新失败，尝试直接更新team.html
+        if (!success) {
+            // 处理头像文件
+            const avatarFile = formData.get('avatar');
+            if (avatarFile && avatarFile.size > 0) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    updatedTeacher.avatar = e.target.result;
+                    
+                    // 获取当前列表并更新成员
+                    const teachers = await fetchTeachersFromTeamPage();
+                    const index = teachers.findIndex(t => t._id === teacherId);
+                    if (index !== -1) {
+                        teachers[index] = {...teachers[index], ...updatedTeacher};
+                    }
+                    
+                    // 渲染表格并更新team.html
+                    renderTeachersTable(teachers);
+                    await updateTeamHtml(teachers);
+                };
+                reader.readAsDataURL(avatarFile);
+            } else {
+                // 获取当前列表并更新成员
+                const teachers = await fetchTeachersFromTeamPage();
+                const index = teachers.findIndex(t => t._id === teacherId);
+                if (index !== -1) {
+                    // 保留原来的头像
+                    updatedTeacher.avatar = teachers[index].avatar;
+                    teachers[index] = {...teachers[index], ...updatedTeacher};
+                }
+                
+                // 渲染表格并更新team.html
+                renderTeachersTable(teachers);
+                await updateTeamHtml(teachers);
+            }
+            
+            showToast('success', '委员会成员信息更新成功（直接更新了team.html页面）');
+        }
+        
+        // 关闭模态框
+        const editModal = bootstrap.Modal.getInstance(document.getElementById('editTeacherModal'));
+        editModal.hide();
+        
+        // 刷新列表
+        fetchTeachersList();
     } catch (error) {
-        console.error('获取教师信息出错:', error);
-        showToast('error', '获取教师信息出错');
+        showToast('error', '更新委员会成员信息时发生错误');
+        console.error('Error updating teacher:', error);
     }
 }
 
-// 更新教师
-async function updateTeacher(id, formData) {
+// 处理委员会成员删除
+async function handleTeacherDelete(teacherId) {
+    const confirmed = await confirmDelete('确定要删除这位委员会成员吗？');
+    if (!confirmed) return;
+    
     try {
-        const response = await fetch(`/api/teachers/${id}`, {
-            method: 'PUT',
-            body: formData
+        // 尝试使用API删除
+        let success = false;
+        
+        try {
+            const response = await apiRequest(`/api/teachers/${teacherId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.success) {
+                success = true;
+                showToast('success', '委员会成员删除成功');
+            }
+        } catch (error) {
+            console.warn('API删除委员会成员失败，将尝试直接更新team.html');
+        }
+        
+        // 如果API删除失败，尝试直接更新team.html
+        if (!success) {
+            // 获取当前列表并删除成员
+            const teachers = await fetchTeachersFromTeamPage();
+            const filteredTeachers = teachers.filter(t => t._id !== teacherId);
+            
+            // 渲染表格并更新team.html
+            renderTeachersTable(filteredTeachers);
+            await updateTeamHtml(filteredTeachers);
+            
+            showToast('success', '委员会成员删除成功（直接更新了team.html页面）');
+        }
+        
+        // 刷新列表
+        fetchTeachersList();
+    } catch (error) {
+        showToast('error', '删除委员会成员时发生错误');
+        console.error('Error deleting teacher:', error);
+    }
+}
+
+// 更新team.html页面
+async function updateTeamHtml(teachers = null) {
+    try {
+        // 如果没有传入teachers参数，先获取当前列表
+        if (!teachers) {
+            teachers = [];
+            const rows = document.querySelectorAll('#teachers-table tr');
+            
+            rows.forEach((row, index) => {
+                const id = row.dataset.id;
+                const name = row.cells[3].textContent;
+                const contact = row.cells[4].textContent;
+                const avatar = row.querySelector('img').src;
+                
+                teachers.push({
+                    _id: id,
+                    name,
+                    contact,
+                    avatar,
+                    displayOrder: index + 1
+                });
+            });
+        }
+        
+        // 获取team.html页面内容
+        const response = await fetch('/team.html');
+        let htmlText = await response.text();
+        
+        // 创建一个临时的DOM元素来解析HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        
+        // 找到教师网格容器
+        const teachersGrid = doc.querySelector('.teachers-grid');
+        if (!teachersGrid) {
+            throw new Error('在team.html中找不到.teachers-grid元素');
+        }
+        
+        // 清空原有内容
+        teachersGrid.innerHTML = '';
+        
+        // 按显示顺序排序
+        teachers.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+        
+        // 只显示在职的成员
+        const activeTeachers = teachers.filter(teacher => teacher.status);
+        
+        // 添加委员会成员卡片
+        activeTeachers.forEach(teacher => {
+            const card = document.createElement('div');
+            card.className = 'teacher-card';
+            card.innerHTML = `
+                <div class="teacher-image">
+                    <img src="${teacher.avatar || '../assets/icon/default-avatar.png'}" alt="${teacher.name}">
+                </div>
+                <div class="teacher-info">
+                    <h3 class="teacher-name">${teacher.name}</h3>
+                    <p class="teacher-description">${teacher.introduction || ''}</p>
+                    <div class="teacher-social">
+                        <a href="#"><i class="fab fa-weixin"></i></a>
+                        <a href="#"><i class="fas fa-envelope"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                    </div>
+                </div>
+            `;
+            teachersGrid.appendChild(card);
         });
         
-        if (response.ok) {
-            showToast('success', '更新教师成功');
-            getTeachers();
-            closeModal();
-        } else {
-            const error = await response.json();
-            showToast('error', error.message || '更新教师失败');
-        }
-    } catch (error) {
-        console.error('更新教师出错:', error);
-        showToast('error', '更新教师出错');
-    }
-}
-
-// 删除教师
-async function deleteTeacher(id) {
-    if (!confirm('确定要删除这个教师吗？')) return;
-    
-    try {
-        const response = await fetch(`/api/teachers/${id}`, {
-            method: 'DELETE'
+        // 将修改后的HTML转回字符串
+        const serializer = new XMLSerializer();
+        const updatedHtml = serializer.serializeToString(doc);
+        
+        // 使用 fetch 或 XMLHttpRequest 发送更新请求到服务器
+        const updateResponse = await fetch('/api/update-team-html', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ html: updatedHtml })
         });
         
-        if (response.ok) {
-            showToast('success', '删除教师成功');
-            getTeachers();
-        } else {
-            const error = await response.json();
-            showToast('error', error.message || '删除教师失败');
+        if (!updateResponse.ok) {
+            throw new Error('更新team.html文件失败');
         }
+        
+        return true;
     } catch (error) {
-        console.error('删除教师出错:', error);
-        showToast('error', '删除教师出错');
+        console.error('更新team.html失败:', error);
+        showToast('error', '更新team.html页面失败：' + error.message);
+        return false;
     }
 }
 
-// 关闭模态框
-function closeModal() {
-    const modal = bootstrap.Modal.getInstance(teacherModal);
-    if (modal) {
-        modal.hide();
-        teacherForm.reset();
-        avatarPreview.style.display = 'none';
-        teacherForm.dataset.id = '';
-    }
-}
-
-// 更新仪表盘计数
-function updateDashboardCount(count) {
-    const countElement = document.getElementById('teachers-count');
-    if (countElement) {
-        countElement.textContent = count;
-    }
-}
-
-// 事件监听
-document.addEventListener('DOMContentLoaded', () => {
-    // 获取初始数据
-    getTeachers();
-    
-    // 表单提交处理
-    teacherForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const formData = new FormData(teacherForm);
-        const id = teacherForm.dataset.id;
-        
-        if (id) {
-            await updateTeacher(id, formData);
-        } else {
-            await addTeacher(formData);
-        }
-    });
-    
-    // 头像上传预览
-    teacherForm.querySelector('input[type="file"]').addEventListener('change', function() {
-        previewAvatar(this);
-    });
-    
-    // 添加按钮点击
-    addTeacherBtn.addEventListener('click', () => {
-        teacherModal.querySelector('.modal-title').textContent = '添加教师';
-        teacherForm.dataset.id = '';
-        const modal = new bootstrap.Modal(teacherModal);
-        modal.show();
-    });
-});
-});

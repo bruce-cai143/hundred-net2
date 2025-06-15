@@ -1,0 +1,531 @@
+.file-manager {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.upload-section {
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.upload-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    position: relative;
+    min-height: 180px;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: #007bff;
+    background-color: #f0f7ff;
+    transform: scale(1.01);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
+}
+
+.upload-area:active {
+    transform: scale(0.99);
+}
+
+.upload-area .file-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    transition: transform 0.3s;
+}
+
+.upload-area:hover .file-icon {
+    transform: scale(1.1);
+}
+
+.upload-area p {
+    margin: 0;
+    color: #666;
+    font-weight: 500;
+}
+
+.upload-area::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.upload-area input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+    z-index: -1;
+}
+
+.selected-file {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    background-color: #f0f7ff;
+    border-radius: 4px;
+}
+
+.selected-file .file-icon {
+    font-size: 32px;
+    margin-right: 15px;
+}
+
+.selected-file .file-info {
+    flex-grow: 1;
+}
+
+.selected-file .file-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.selected-file .file-size {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.selected-file .btn-cancel {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.file-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.file-form select, .file-form textarea {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.file-form textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.upload-progress {
+    margin-top: 20px;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress {
+    height: 100%;
+    background-color: #4CAF50;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.9em;
+    color: #666;
+    text-align: center;
+}
+
+.files-section {
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.file-search {
+    margin-bottom: 15px;
+}
+
+.file-search input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.file-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.file-filters select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.file-list {
+    margin-bottom: 20px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item .file-icon {
+    font-size: 32px;
+    margin-right: 15px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.file-item .file-info {
+    flex-grow: 1;
+}
+
+.file-item .file-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.file-item .file-meta {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.file-item .file-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.file-item .btn-download, .file-item .btn-delete {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.file-item .btn-download {
+    background-color: #3498db;
+    color: white;
+}
+
+.file-item .btn-delete {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.pagination button {
+    min-width: 30px;
+    height: 30px;
+    border: 1px solid #ddd;
+    background-color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pagination button:hover:not(.active):not([disabled]) {
+    background-color: #f1f1f1;
+}
+
+.pagination button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+@media (max-width: 768px) {
+    .file-manager {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 整合以下样式，避免冲突 */
+.file-upload {
+    margin: 20px 0;
+    padding: 20px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.file-upload input[type="text"],
+.file-upload textarea,
+.file-upload select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.file-upload textarea {
+    min-height: 100px;
+}
+.upload-area {
+    margin: 15px 0;
+    padding: 30px;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.upload-area:hover {
+    background: #f9f9f9;
+    border-color: #aaa;
+}
+.upload-area.dragover {
+    background: #f0f8ff;
+    border-color: #2196F3;
+}
+.file-list {
+    margin-top: 30px;
+}
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.file-icon {
+    font-size: 24px;
+    margin-right: 15px;
+    color: #2196F3;
+}
+.file-info {
+    flex-grow: 1;
+}
+.file-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.file-meta {
+    font-size: 14px;
+    color: #666;
+}
+.file-actions {
+    display: flex;
+    gap: 10px;
+}
+.btn-download,
+.btn-delete {
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.btn-download {
+    background: #4CAF50;
+    color: white;
+}
+.btn-delete {
+    background: #f44336;
+    color: white;
+}
+.file-categories {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.file-category {
+    padding: 5px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    background: #f1f1f1;
+}
+.file-category.active {
+    background: #2196F3;
+    color: white;
+}
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+.pagination button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+}
+.pagination button.active {
+    background: #2196F3;
+    color: white;
+    border-color: #2196F3;
+}
+.file-preview {
+    margin-top: 15px;
+    text-align: center;
+}
+.file-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+}
+.progress-bar {
+    height: 10px;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+}
+.progress {
+    height: 100%;
+    background-color: #4CAF50;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    animation: slide-in 0.3s ease-out forwards;
+    max-width: 350px;
+}
+
+.notification.success {
+    background-color: #4CAF50;
+}
+
+.notification.error {
+    background-color: #f44336;
+}
+
+.notification.warning {
+    background-color: #ff9800;
+}
+
+.notification.info {
+    background-color: #2196F3;
+}
+
+.notification.fade-out {
+    animation: fade-out 0.3s ease-in forwards;
+}
+
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* 错误状态样式 */
+.file-form select.error, 
+.file-form textarea.error {
+    border-color: #f44336;
+}
+
+.error-message {
+    color: #f44336;
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* 上传状态样式 */
+.upload-area.uploading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* 文件验证状态 */
+.file-validation {
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.file-validation.valid {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.file-validation.invalid {
+    background-color: #ffebee;
+    color: #c62828;
+}
