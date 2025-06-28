@@ -138,9 +138,11 @@
         <div class="news-container">
             <div class="filter-container">
                 <button class="filter-btn active" data-filter="all">全部</button>
-                <button class="filter-btn" data-filter="activity">校园活动</button>
-                <button class="filter-btn" data-filter="notice">通知公告</button>
-                <button class="filter-btn" data-filter="achievement">成果展示</button>
+                <button class="filter-btn" data-filter="校园新闻">校园新闻</button>
+                <button class="filter-btn" data-filter="通知公告">通知公告</button>
+                <button class="filter-btn" data-filter="学生成就">学生成就</button>
+                <button class="filter-btn" data-filter="教师发展">教师发展</button>
+                <button class="filter-btn" data-filter="国际交流">国际交流</button>
             </div>
 
             <div class="news-grid" id="newsGrid"></div>
@@ -189,7 +191,7 @@
             try {
                 let url = `/api/news?page=${page}&limit=9`;
                 if (filter !== 'all') {
-                    url += `&category=${filter}`;
+                    url += `&category=${encodeURIComponent(filter)}`;
                 }
                 
                 const response = await fetch(url);
@@ -227,18 +229,11 @@
             }
             
             newsGrid.innerHTML = news.map(item => {
-                // 获取第一张图片作为封面
-                let imageUrl = 'assets/images/gallery2'; // 默认占位图
-                if (item.images && item.images.length > 0) {
-                    imageUrl = item.images[0].image_path;
-                }
-                
-                // 提取摘要（取内容前100个字符）
+                let imageUrl = item.cover || 'assets/images/news-default.jpg';
+                if (imageUrl.startsWith('/')) imageUrl = imageUrl.substring(1);
+                if (!/\.(jpg|jpeg|png|gif|webp)$/i.test(imageUrl)) imageUrl += '.jpg';
                 const excerpt = item.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...';
-                
-                // 格式化日期
                 const date = new Date(item.created_at).toLocaleDateString('zh-CN');
-                
                 return `
                     <div class="news-card card hover-lift">
                         <div class="news-image">
@@ -332,8 +327,9 @@
             document.querySelector('.nav-links').classList.toggle('active');
         });
         
-        // 初始化
+        // 进入页面时强制清空newsGrid，防止首页内容残留
         document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('newsGrid').innerHTML = '';
             getNewsList();
         });
     </script>

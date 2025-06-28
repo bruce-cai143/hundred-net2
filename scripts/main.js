@@ -104,15 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 加载新闻 - 只在有新闻网格时执行
-    if (document.querySelector('.news-grid')) {
-        try {
-            loadNews();
-        } catch (error) {
-            console.error('加载新闻失败:', error);
-        }
-    }
-    
     // 移动端菜单
     if (document.querySelector('.mobile-menu-btn')) {
         try {
@@ -369,117 +360,6 @@ function initVideoPlayer() {
     video.addEventListener('ended', function() {
         playBtn.textContent = '▶';
     });
-}
-
-// 加载新闻
-async function loadNews() {
-    try {
-        const newsGrid = document.querySelector('.news-grid');
-        if (!newsGrid) {
-            console.log('新闻网格不存在，跳过加载新闻');
-            return;
-        }
-        
-        console.log('开始获取新闻数据');
-        const response = await fetch('/api/news?limit=4');
-        
-        if (!response.ok) {
-            console.error('获取新闻列表失败，状态码:', response.status);
-            newsGrid.innerHTML = '<p class="text-center">加载新闻失败，请稍后重试</p>';
-            return;
-        }
-        
-        const data = await response.json();
-        console.log('获取到的新闻数据:', data);
-        
-        if (data.news && data.news.length > 0) {
-            newsGrid.innerHTML = data.news.map(news => `
-                <div class="news-card card">
-                    <div class="news-image">
-                        <img src="${news.image_url || 'assets/images/gallery2.jpg'}" alt="${news.title}">
-                    </div>
-                    <div class="news-content">
-                        <div class="news-meta">
-                            <span class="news-category">${news.category || '校园新闻'}</span>
-                            <span class="news-date">${new Date(news.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <h3 class="news-title">${news.title}</h3>
-                        <p class="news-excerpt">${news.content ? news.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : '暂无内容'}</p>
-                        <a href="news.html?id=${news.id}" class="news-link button ghost">阅读全文 →</a>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            newsGrid.innerHTML = '<p class="text-center">暂无新闻</p>';
-        }
-        
-        // 绑定加载更多按钮事件
-        const loadMoreBtn = document.querySelector('.news-section .button-group .button');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', async () => {
-                const currentCount = document.querySelectorAll('.news-card').length;
-                console.log('加载更多新闻，跳过前', currentCount, '条');
-                const moreNews = await loadMoreNews(currentCount);
-                
-                if (moreNews.length > 0) {
-                    const fragment = document.createDocumentFragment();
-                    moreNews.forEach(news => {
-                        const newsCard = document.createElement('div');
-                        newsCard.className = 'news-card card';
-                        newsCard.innerHTML = `
-                            <div class="news-image">
-                                <img src="${news.image_url || 'assets/images/gallery2.jpg'}" alt="${news.title}">
-                            </div>
-                            <div class="news-content">
-                                <div class="news-meta">
-                                    <span class="news-category">${news.category || '校园新闻'}</span>
-                                    <span class="news-date">${new Date(news.created_at).toLocaleDateString()}</span>
-                                </div>
-                                <h3 class="news-title">${news.title}</h3>
-                                <p class="news-excerpt">${news.content ? news.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : '暂无内容'}</p>
-                                <a href="news.html?id=${news.id}" class="news-link button ghost">阅读全文 →</a>
-                            </div>
-                        `;
-                        fragment.appendChild(newsCard);
-                    });
-                    newsGrid.appendChild(fragment);
-                } else {
-                    loadMoreBtn.textContent = '没有更多新闻';
-                    loadMoreBtn.disabled = true;
-                }
-            });
-        }
-        
-        // 绑定查看全部按钮事件
-        const viewAllBtn = document.querySelector('.news-section .button-group .button.outline');
-        if (viewAllBtn) {
-            viewAllBtn.addEventListener('click', () => {
-                window.location.href = 'news-list.html';
-            });
-        }
-        
-        console.log('新闻加载完成');
-    } catch (error) {
-        console.error('加载新闻失败:', error);
-        const newsGrid = document.querySelector('.news-grid');
-        if (newsGrid) {
-            newsGrid.innerHTML = '<p class="text-center">加载新闻失败，请检查网络连接</p>';
-        }
-    }
-}
-
-// 加载更多新闻
-async function loadMoreNews(skip = 0) {
-    try {
-        const response = await fetch(`/api/news?limit=4&skip=${skip}`);
-        if (!response.ok) throw new Error('获取更多新闻失败');
-        
-        const data = await response.json();
-        return data.news || [];
-    } catch (error) {
-        console.error('加载更多新闻失败:', error);
-        return [];
-    }
 }
 
 // 初始化移动端菜单

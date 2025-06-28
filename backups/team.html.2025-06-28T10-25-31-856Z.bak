@@ -125,37 +125,37 @@
     // 青年委员会成员动态渲染
     document.addEventListener('DOMContentLoaded', async function() {
         const grid = document.getElementById('teachers-grid');
-        grid.innerHTML = '&amp;lt;div style="text-align:center;color:#888;"&amp;gt;加载中...&amp;lt;/div&amp;gt;';
+        grid.innerHTML = '&lt;div style="text-align:center;color:#888;"&gt;加载中...&lt;/div&gt;';
         try {
             const res = await fetch('/api/teachers');
             const data = await res.json();
             if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
-                grid.innerHTML = '&amp;lt;div style="text-align:center;color:#888;"&amp;gt;暂无青年委员会成员信息&amp;lt;/div&amp;gt;';
+                grid.innerHTML = '&lt;div style="text-align:center;color:#888;"&gt;暂无青年委员会成员信息&lt;/div&gt;';
                 return;
             }
             grid.innerHTML = '';
-            data.data.forEach(teacher =&amp;gt; {
+            data.data.forEach(teacher =&gt; {
                 const card = document.createElement('div');
                 card.className = 'teacher-card';
                 card.innerHTML = `
-                    &amp;lt;div class="teacher-image"&amp;gt;
-                        &amp;lt;img src="${teacher.avatarUrl || teacher.avatar || 'assets/icon/default-avatar.png'}" alt="${teacher.name}"&amp;gt;
-                    &amp;lt;/div&amp;gt;
-                    &amp;lt;div class="teacher-info"&amp;gt;
-                        &amp;lt;h3 class="teacher-name"&amp;gt;${teacher.name || ''}&amp;lt;/h3&amp;gt;
-                        &amp;lt;div class="teacher-title"&amp;gt;${teacher.title || ''}&amp;lt;/div&amp;gt;
-                        &amp;lt;p class="teacher-description"&amp;gt;${teacher.introduction || ''}&amp;lt;/p&amp;gt;
-                        &amp;lt;div class="teacher-social"&amp;gt;
-                            &amp;lt;a href="#"&amp;gt;&amp;lt;i class="fab fa-weixin"&amp;gt;&amp;lt;/i&amp;gt;&amp;lt;/a&amp;gt;
-                            &amp;lt;a href="#"&amp;gt;&amp;lt;i class="fas fa-envelope"&amp;gt;&amp;lt;/i&amp;gt;&amp;lt;/a&amp;gt;
-                            &amp;lt;a href="#"&amp;gt;&amp;lt;i class="fab fa-weibo"&amp;gt;&amp;lt;/i&amp;gt;&amp;lt;/a&amp;gt;
-                        &amp;lt;/div&amp;gt;
-                    &amp;lt;/div&amp;gt;
+                    &lt;div class="teacher-image"&gt;
+                        &lt;img src="${teacher.avatarUrl || teacher.avatar || 'assets/icon/default-avatar.png'}" alt="${teacher.name}"&gt;
+                    &lt;/div&gt;
+                    &lt;div class="teacher-info"&gt;
+                        &lt;h3 class="teacher-name"&gt;${teacher.name || ''}&lt;/h3&gt;
+                        &lt;div class="teacher-title"&gt;${teacher.title || ''}&lt;/div&gt;
+                        &lt;p class="teacher-description"&gt;${teacher.introduction || ''}&lt;/p&gt;
+                        &lt;div class="teacher-social"&gt;
+                            &lt;a href="#"&gt;&lt;i class="fab fa-weixin"&gt;&lt;/i&gt;&lt;/a&gt;
+                            &lt;a href="#"&gt;&lt;i class="fas fa-envelope"&gt;&lt;/i&gt;&lt;/a&gt;
+                            &lt;a href="#"&gt;&lt;i class="fab fa-weibo"&gt;&lt;/i&gt;&lt;/a&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
                 `;
                 grid.appendChild(card);
             });
         } catch (e) {
-            grid.innerHTML = '&amp;lt;div style="text-align:center;color:#888;"&amp;gt;加载失败，请稍后重试&amp;lt;/div&amp;gt;';
+            grid.innerHTML = '&lt;div style="text-align:center;color:#888;"&gt;加载失败，请稍后重试&lt;/div&gt;';
         }
     });
     </script>

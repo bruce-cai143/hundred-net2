@@ -1,6 +1,6 @@
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS school_db;
-USE school_db;
+CREATE DATABASE IF NOT EXISTS school_db2;
+USE school_db2;
 
 -- 管理员表
 CREATE TABLE IF NOT EXISTS admins (
@@ -97,6 +97,10 @@ CREATE TABLE IF NOT EXISTS teachers (
     phone VARCHAR(20),
     bio TEXT,
     image VARCHAR(255),
+    contact VARCHAR(100),
+    introduction TEXT,
+    status TINYINT(1) DEFAULT 1,
+    order_num INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

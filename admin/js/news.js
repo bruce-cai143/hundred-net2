@@ -13,7 +13,9 @@ async function getNewsList(page = 1) {
         }
         
         currentPage = page;
-        const response = await authenticatedFetch(`/api/news/admin/list?page=${page}`);
+        const response = await fetch(`/api/news/admin/list?page=${page}`, {
+            credentials: 'include'
+        });
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -124,15 +126,46 @@ document.getElementById('images')?.addEventListener('change', function(event) {
     const preview = document.getElementById('imagePreview');
     if (!preview) return;
     
-    preview.innerHTML = '';
+    // 获取当前已有的图片数量
+    const existingImages = preview.querySelectorAll('.image-item').length;
+    const newFiles = Array.from(this.files);
     
-    if (this.files.length > 5) {
+    // 检查总图片数量是否超过限制
+    if (existingImages + newFiles.length > 5) {
         showNotification('最多只能上传5张图片', 'warning');
         this.value = '';
         return;
     }
     
-    Array.from(this.files).forEach((file, index) => {
+    // 创建或获取隐藏的input来存储所有文件
+    let hiddenInput = document.getElementById('allImages');
+    if (!hiddenInput) {
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'file';
+        hiddenInput.id = 'allImages';
+        hiddenInput.name = 'images';
+        hiddenInput.multiple = true;
+        hiddenInput.style.display = 'none';
+        document.getElementById('newsForm').appendChild(hiddenInput);
+    }
+    
+    // 将新文件添加到隐藏input
+    const dt = new DataTransfer();
+    const currentFiles = hiddenInput.files;
+    
+    // 添加现有文件
+    for (let i = 0; i < currentFiles.length; i++) {
+        dt.items.add(currentFiles[i]);
+    }
+    
+    // 添加新文件
+    newFiles.forEach(file => {
+        dt.items.add(file);
+    });
+    
+    hiddenInput.files = dt.files;
+    
+    newFiles.forEach((file, index) => {
         // 验证文件类型
         if (!file.type.match('image.*')) {
             showNotification(`文件 "${file.name}" 不是图片，请选择图片文件`, 'error');
@@ -149,41 +182,48 @@ document.getElementById('images')?.addEventListener('change', function(event) {
         reader.onload = function(e) {
             const div = document.createElement('div');
             div.className = 'image-item';
+            const actualIndex = existingImages + index;
             div.innerHTML = `
                 <img src="${e.target.result}" alt="预览图片">
-                <button type="button" class="remove-image" data-index="${index}">×</button>
-                <input type="text" class="image-caption" name="caption_${index}" placeholder="图片说明">
+                <button type="button" class="remove-image" data-index="${actualIndex}" data-filename="${file.name}">×</button>
+                <input type="text" class="image-caption" name="caption_${actualIndex}" placeholder="图片说明">
             `;
             
             // 添加删除按钮事件
             div.querySelector('.remove-image').addEventListener('click', function() {
-                removeImage(parseInt(this.getAttribute('data-index')));
+                removeImage(parseInt(this.getAttribute('data-index')), this.getAttribute('data-filename'));
             });
             
             preview.appendChild(div);
         };
         reader.readAsDataURL(file);
     });
+    
+    // 清空input，允许重复选择同一文件
+    this.value = '';
 });
 
 // 删除预览图片
-function removeImage(index) {
+function removeImage(index, filename) {
     try {
-        const input = document.getElementById('images');
         const preview = document.getElementById('imagePreview');
+        const hiddenInput = document.getElementById('allImages');
         
-        if (!input || !preview) return;
+        if (!preview) return;
         
+        // 从隐藏input中移除指定文件
+        if (hiddenInput) {
         const dt = new DataTransfer();
-        const { files } = input;
+            const currentFiles = hiddenInput.files;
         
-        for (let i = 0; i < files.length; i++) {
-            if (i !== index) {
-                dt.items.add(files[i]);
+            for (let i = 0; i < currentFiles.length; i++) {
+                if (currentFiles[i].name !== filename) {
+                    dt.items.add(currentFiles[i]);
             }
         }
         
-        input.files = dt.files;
+            hiddenInput.files = dt.files;
+        }
         
         // 找到对应索引的预览项并删除
         const imageItems = preview.querySelectorAll('.image-item');
@@ -191,8 +231,9 @@ function removeImage(index) {
             imageItems[index].remove();
         }
         
-        // 更新其他图片的index和caption索引
-        preview.querySelectorAll('.image-item').forEach((item, i) => {
+        // 更新剩余图片的index和caption索引
+        const remainingItems = preview.querySelectorAll('.image-item');
+        remainingItems.forEach((item, i) => {
             item.querySelector('.remove-image').setAttribute('data-index', i);
             const caption = item.querySelector('.image-caption');
             caption.name = `caption_${i}`;
@@ -224,17 +265,63 @@ if (form) {
             const formData = new FormData(form);
             const newsId = document.getElementById('newsId').value;
 
-            // 准备JSON数据
-            const jsonData = {
+            // 检查是否有图片文件 - 从隐藏的input获取
+            const hiddenInput = document.getElementById('allImages');
+            let hasImages = false;
+            
+            if (hiddenInput && hiddenInput.files.length > 0) {
+                // 将隐藏input中的文件添加到FormData
+                for (let i = 0; i < hiddenInput.files.length; i++) {
+                    formData.append('images', hiddenInput.files[i]);
+                }
+                hasImages = true;
+            }
+            
+            // 添加调试信息
+            console.log('表单元素:', {
+                title: document.getElementById('title')?.value,
+                content: document.getElementById('content')?.value,
+                author: document.getElementById('author')?.value,
+                category: document.getElementById('category')?.value,
+                newsId: newsId
+            });
+            
+            console.log('FormData内容:', {
                 title: formData.get('title'),
                 content: formData.get('content'),
-                author: formData.get('author') || null,
-                category: formData.get('category')
-            };
+                author: formData.get('author'),
+                category: formData.get('category'),
+                hasImages: hasImages,
+                imageCount: hiddenInput ? hiddenInput.files.length : 0
+            });
+            
+            // 测试FormData是否为空
+            const formDataEntries = [];
+            for (let [key, value] of formData.entries()) {
+                formDataEntries.push([key, value]);
+            }
+            console.log('FormData所有条目:', formDataEntries);
+            
+            // 如果FormData为空，手动添加数据
+            if (formDataEntries.length === 0) {
+                console.log('FormData为空，手动添加数据');
+                formData.append('title', document.getElementById('title').value);
+                formData.append('content', document.getElementById('content').value);
+                formData.append('author', document.getElementById('author').value);
+                formData.append('category', document.getElementById('category').value);
+            }
             
             // 开始提交
-            const url = newsId ? `/api/news/${newsId}` : '/api/news';
-            const method = newsId ? 'PUT' : 'POST';
+            let url, method;
+            if (hasImages) {
+                // 如果有图片，使用带图片的路由
+                url = newsId ? `/api/news/${newsId}/with-images` : '/api/news/with-images';
+                method = newsId ? 'PUT' : 'POST';
+            } else {
+                // 如果没有图片，使用普通路由
+                url = newsId ? `/api/news/${newsId}` : '/api/news';
+                method = newsId ? 'PUT' : 'POST';
+            }
             
             // 显示加载状态
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -242,48 +329,27 @@ if (form) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass"></i> 处理中...';
             
-            const response = await authenticatedFetch(url, {
+            const response = await fetch(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(jsonData)
+                credentials: 'include',
+                body: formData // 直接使用FormData，包含图片文件
             });
             
             // 恢复按钮状态
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnText;
             
+            console.log('响应状态:', response.status);
+            console.log('响应头:', response.headers);
+            
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '操作失败');
+                const errorText = await response.text();
+                console.error('错误响应:', errorText);
+                throw new Error(`请求失败: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
             showNotification(data.message || (newsId ? '新闻更新成功' : '新闻发布成功'), 'success');
-            
-            // 处理图片上传
-            const imageFiles = formData.getAll('images');
-            if (imageFiles && imageFiles.length > 0 && imageFiles[0].size > 0) {
-                const newsIdToUse = newsId || data.newsId;
-                
-                // 上传图片
-                const imageFormData = new FormData();
-                for (let i = 0; i < imageFiles.length; i++) {
-                    imageFormData.append('images', imageFiles[i]);
-                    imageFormData.append(`caption_${i}`, formData.get(`caption_${i}`) || '');
-                }
-                
-                const imageResponse = await authenticatedFetch(`/api/news/${newsIdToUse}/images`, {
-                    method: 'POST',
-                    body: imageFormData
-                });
-                
-                if (!imageResponse.ok) {
-                    const errorData = await imageResponse.json();
-                    throw new Error(errorData.message || '图片上传失败，但新闻已保存');
-                }
-            }
             
             resetForm();
             getNewsList(currentPage);
@@ -339,6 +405,12 @@ function resetForm() {
     if (imagePreview) {
         imagePreview.innerHTML = '';
     }
+    
+    // 重置隐藏的图片input
+    const hiddenInput = document.getElementById('allImages');
+    if (hiddenInput) {
+        hiddenInput.remove();
+    }
 }
 
 // 编辑新闻
@@ -349,7 +421,9 @@ async function editNews(id) {
             return;
         }
         
-        const response = await authenticatedFetch(`/api/news/${id}`);
+        const response = await fetch(`/api/news/${id}`, {
+            credentials: 'include'
+        });
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -381,7 +455,7 @@ async function editNews(id) {
                     const div = document.createElement('div');
                     div.className = 'image-item';
                     div.innerHTML = `
-                        <img src="${image.image_path}" alt="新闻图片">
+                        <img src="${image.image_url}" alt="新闻图片">
                         <button type="button" class="remove-image existing-image" data-id="${image.id}">×</button>
                         <input type="text" class="image-caption" value="${image.caption || ''}" placeholder="图片说明">
                         <input type="hidden" name="existing_image_${index}" value="${image.id}">
@@ -421,8 +495,9 @@ async function deleteNewsImage(imageId) {
             return;
         }
         
-        const response = await authenticatedFetch(`/api/news/image/${imageId}`, {
-            method: 'DELETE'
+        const response = await fetch(`/api/news/image/${imageId}`, {
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (!response.ok) {
@@ -457,8 +532,9 @@ async function deleteNews(id) {
             return;
         }
         
-        const response = await authenticatedFetch(`/api/news/${id}`, {
-            method: 'DELETE'
+        const response = await fetch(`/api/news/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (!response.ok) {

@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 构建API URL
         let url = `/api/news?limit=${state.limit}&offset=${offset}&sort=publish_date&order=${state.order}&status=published`;
-        if (state.category) {
-            url += `&category=${state.category}`;
+        if (state.category && state.category !== 'all') {
+            url += `&category=${encodeURIComponent(state.category)}`;
         }
         
         // 获取新闻数据
@@ -121,9 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         news.forEach(item => {
             const publishDate = new Date(item.publish_date).toLocaleDateString('zh-CN');
-            const coverImage = item.cover_image_id 
+            const coverImage = item.cover 
+                ? item.cover 
+                : (item.cover_image_id 
                 ? `/api/media/download/${item.cover_image_id}?type=image` 
-                : '/assets/images/news-default.jpg';
+                    : '/assets/images/news-default.jpg');
             
             html += `
                 <div class="news-card">

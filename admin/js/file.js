@@ -64,7 +64,7 @@ function initializeUploadEvents() {
 
 function handleFileSelection(file) {
     selectedFile = file;
-    const validation = validateFile(file);
+        const validation = validateFile(file);
     if (!validation.valid) { showNotification(validation.message, 'error'); return; }
     const fileInfo = document.getElementById('fileInfo');
     const fileName = document.getElementById('fileName');
@@ -138,8 +138,8 @@ async function uploadFile() {
             console.log('上传响应状态:', xhr.status);
             console.log('上传响应内容:', xhr.responseText);
             if (xhr.status === 200) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
                     if (response.success) {
                         showNotification('文件上传成功', 'success');
                         resetUploadForm();
@@ -147,7 +147,7 @@ async function uploadFile() {
                     } else {
                         showNotification(response.message || '上传失败', 'error');
                     }
-                } catch (e) {
+                    } catch (e) {
                     showNotification('响应解析失败: ' + e.message, 'error');
                 }
             } else {
@@ -291,5 +291,5 @@ async function confirmDeleteFile() {
 }
 window.changePage = changePage;
 window.previewFile = previewFile;
-window.downloadFile = downloadFile;
-window.deleteFile = deleteFile; 
+    window.downloadFile = downloadFile;
+    window.deleteFile = deleteFile;

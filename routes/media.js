@@ -456,4 +456,24 @@ router.delete('/:id', auth.requireAdmin, async (req, res) => {
     }
 });
 
+/**
+ * 获取新闻图片二进制流
+ * GET /api/media/image/:id
+ */
+router.get('/image/:id', async (req, res) => {
+    const imageId = req.params.id;
+    try {
+        const [rows] = await db.query('SELECT file_data, mime_type FROM news_images WHERE id = ?', [imageId]);
+        if (!rows || rows.length === 0) {
+            return res.status(404).send('图片不存在');
+        }
+        const img = rows[0];
+        res.set('Content-Type', img.mime_type || 'application/octet-stream');
+        res.send(img.file_data);
+    } catch (err) {
+        console.error('图片读取失败:', err);
+        res.status(500).send('图片读取失败');
+    }
+});
+
 module.exports = router;

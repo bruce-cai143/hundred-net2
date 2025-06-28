@@ -37,6 +37,8 @@ exports.app = app;
 
 // 中间件
 app.use(cors());
+
+// 配置body解析中间件
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

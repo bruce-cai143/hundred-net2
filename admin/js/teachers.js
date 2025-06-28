@@ -49,10 +49,10 @@ async function fetchTeachersList() {
     try {
         // 只从API获取
         let teachers = [];
-        const response = await apiRequest('/api/teachers');
-        if (response.success) {
-            teachers = response.data;
-        }
+            const response = await apiRequest('/api/teachers');
+            if (response.success) {
+                teachers = response.data;
+            }
         renderTeachersTable(teachers);
     } catch (error) {
         showToast('error', '获取委员会成员列表时发生错误');
@@ -172,18 +172,25 @@ async function handleTeacherSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
+    
+    // 调试输出
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+        console.log('FormData:', key, value);
+    }
+    
     try {
         // 只用API添加
-        const response = await apiRequest('/api/teachers', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                // 不设置Content-Type，让浏览器自动设置包含boundary的multipart/form-data
-            }
-        }, true);
-        if (response.success) {
-            showToast('success', '委员会成员添加成功');
-        } else {
+            const response = await apiRequest('/api/teachers', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    // 不设置Content-Type，让浏览器自动设置包含boundary的multipart/form-data
+                }
+            }, true);
+            if (response.success) {
+                showToast('success', '委员会成员添加成功');
+            } else {
             showToast('error', response.message || '添加失败');
         }
         // 重置表单
@@ -199,8 +206,18 @@ async function handleTeacherSubmit(event) {
 
 // 打开编辑委员会成员模态框
 function openEditTeacherModal(teacherId, teachers) {
-    const teacher = teachers.find(t => t._id === teacherId || t.id === teacherId);
-    if (!teacher) return;
+    console.log('openEditTeacherModal called with:', { teacherId, teachers });
+    
+    // 修正：无论id是字符串还是数字都能匹配
+    const teacher = teachers.find(
+        t => String(t._id ?? t.id) === String(teacherId)
+    );
+    console.log('Found teacher:', teacher);
+    
+    if (!teacher) {
+        console.error('Teacher not found for ID:', teacherId);
+        return;
+    }
     
     // 填充表单数据
     document.getElementById('edit-teacher-id').value = teacher._id || teacher.id;
@@ -440,6 +457,42 @@ async function updateTeamHtml(teachers = null) {
         console.error('更新team.html失败:', error);
         showToast('error', '更新team.html页面失败：' + error.message);
         return false;
+    }
+}
+
+// 从team.html页面获取教师列表
+async function fetchTeachersFromTeamPage() {
+    try {
+        // 获取当前表格中的教师数据
+        const teachers = [];
+        const rows = document.querySelectorAll('#teachers-table tr');
+        
+        rows.forEach((row, index) => {
+            const id = row.dataset.id;
+            const name = row.cells[3].textContent.trim();
+            const title = row.cells[4].textContent.trim();
+            const specialty = row.cells[5].textContent.trim();
+            const contact = row.cells[6].textContent.trim();
+            const avatar = row.querySelector('img').src;
+            const status = row.cells[7].querySelector('.badge').classList.contains('bg-success');
+            
+            teachers.push({
+                _id: id,
+                id: id,
+                name,
+                title,
+                specialty,
+                contact,
+                avatar,
+                status,
+                displayOrder: index + 1
+            });
+        });
+        
+        return teachers;
+    } catch (error) {
+        console.error('从team.html获取教师列表失败:', error);
+        return [];
     }
 }
 

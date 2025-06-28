@@ -53,6 +53,13 @@ const upload = multer({
     }
 });
 
+const DEFAULT_COVER = '/assets/images/news-default.jpg';
+function extractFirstImage(content) {
+    if (!content) return null;
+    const match = content.match(/<img[^>]+src=["']([^"'>]+)["']/i);
+    return match ? match[1] : null;
+}
+
 // 获取新闻列表 (公开)
 router.get('/', async (req, res) => {
     try {
@@ -113,6 +120,25 @@ router.get('/', async (req, res) => {
             [...queryParams, limit, offset]
         );
         
+        // 为每条新闻添加cover字段
+        for (let item of news) {
+            // 优先news_images表第一张图片
+            const [images] = await pool.query('SELECT * FROM news_images WHERE news_id = ? ORDER BY display_order LIMIT 1', [item.id]);
+            if (images && images.length > 0) {
+                item.cover = images[0].image_url || DEFAULT_COVER;
+            } else {
+                // 其次content里的图片
+                const contentImg = extractFirstImage(item.content);
+                if (contentImg) {
+                    item.cover = contentImg;
+                } else if (item.image_url) {
+                    item.cover = item.image_url;
+                } else {
+                    item.cover = DEFAULT_COVER;
+                }
+            }
+        }
+        
         res.json({
             success: true,
             news,
@@ -151,6 +177,20 @@ router.get('/:id', async (req, res) => {
         
         const newsItem = news[0];
         newsItem.images = images || [];
+        
+        // 封面逻辑
+        if (images && images.length > 0) {
+            newsItem.cover = images[0].image_url || DEFAULT_COVER;
+        } else {
+            const contentImg = extractFirstImage(newsItem.content);
+            if (contentImg) {
+                newsItem.cover = contentImg;
+            } else if (newsItem.image_url) {
+                newsItem.cover = newsItem.image_url;
+            } else {
+                newsItem.cover = DEFAULT_COVER;
+            }
+        }
         
         res.json({ success: true, news: newsItem });
     } catch (error) {
@@ -243,14 +283,10 @@ router.post('/with-images', authenticateToken, upload.array('images', 5), async 
             return res.status(400).json({ success: false, message: '新闻标题和内容不能为空' });
         }
         
-        // 生成页面路径
-        const pageName = `news-${Date.now()}.html`;
-        const pagePath = `/news-pages/${pageName}`;
-        
-        // 插入新闻记录
+        // 插入新闻记录 - 移除page_path字段
         const [result] = await pool.query(
-            'INSERT INTO news (title, content, author, category, page_path) VALUES (?, ?, ?, ?, ?)',
-            [title, content, author || null, category || '校园新闻', pagePath]
+            'INSERT INTO news (title, content, author, category) VALUES (?, ?, ?, ?)',
+            [title, content, author || null, category || '校园新闻']
         );
         
         const newsId = result.insertId;
@@ -263,9 +299,9 @@ router.post('/with-images', authenticateToken, upload.array('images', 5), async 
                 const imagePath = `/uploads/news-images/${file.filename}`;
                 const caption = req.body[`caption_${i}`] || '';
                 
-                // 插入图片记录
+                // 插入图片记录 - 修复字段名
                 const [imageResult] = await pool.query(
-                    'INSERT INTO news_images (news_id, image_path, caption, display_order) VALUES (?, ?, ?, ?)',
+                    'INSERT INTO news_images (news_id, image_url, caption, display_order) VALUES (?, ?, ?, ?)',
                     [newsId, imagePath, caption, i]
                 );
                 
@@ -277,9 +313,6 @@ router.post('/with-images', authenticateToken, upload.array('images', 5), async 
             }
         }
         
-        // 生成新闻页面
-        await generateNewsPage(newsId, title, content, author, uploadedImages);
-        
         // 记录活动
         await pool.query(
             'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
@@ -290,7 +323,6 @@ router.post('/with-images', authenticateToken, upload.array('images', 5), async 
             success: true, 
             message: '新闻添加成功', 
             newsId: newsId,
-            pagePath: pagePath,
             images: uploadedImages
         });
     } catch (error) {
@@ -369,7 +401,7 @@ router.put('/:id/with-images', authenticateToken, upload.array('images', 5), asy
                 
                 // 插入图片记录
                 const [imageResult] = await pool.query(
-                    'INSERT INTO news_images (news_id, image_path, caption, display_order) VALUES (?, ?, ?, ?)',
+                    'INSERT INTO news_images (news_id, image_url, caption, display_order) VALUES (?, ?, ?, ?)',
                     [newsId, imagePath, caption, startOrder + i]
                 );
                 
@@ -392,7 +424,7 @@ router.put('/:id/with-images', authenticateToken, upload.array('images', 5), asy
             
             // 删除图片文件
             for (const image of imagesToDelete) {
-                const imagePath = path.join(__dirname, '..', image.image_path);
+                const imagePath = path.join(__dirname, '..', image.image_url);
                 try {
                     if (fs.existsSync(imagePath)) {
                         fs.unlinkSync(imagePath);
@@ -408,10 +440,6 @@ router.put('/:id/with-images', authenticateToken, upload.array('images', 5), asy
                 [deleteImageIds]
             );
         }
-        
-        // 重新生成新闻页面
-        const allImages = [...existingImages.filter(img => !deleteImageIds.includes(img.id)), ...uploadedImages];
-        await generateNewsPage(newsId, title, content, author, allImages);
         
         // 记录活动
         await pool.query(
@@ -435,8 +463,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const newsId = req.params.id;
         
-        // 获取新闻标题和页面路径用于活动记录和删除文件
-        const [news] = await pool.query('SELECT title, page_path FROM news WHERE id = ?', [newsId]);
+        // 获取新闻标题用于活动记录
+        const [news] = await pool.query('SELECT title FROM news WHERE id = ?', [newsId]);
         if (news.length === 0) {
             return res.status(404).json({ success: false, message: '新闻不存在' });
         }
@@ -446,25 +474,13 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         
         // 删除图片文件
         for (const image of images) {
-            const imagePath = path.join(__dirname, '..', image.image_path);
+            const imagePath = path.join(__dirname, '..', image.image_url);
             try {
                 if (fs.existsSync(imagePath)) {
                     fs.unlinkSync(imagePath);
                 }
             } catch (err) {
                 console.error('删除图片文件失败:', err);
-            }
-        }
-        
-        // 删除新闻页面文件
-        if (news[0].page_path) {
-            const pageFilePath = path.join(__dirname, '..', news[0].page_path);
-            try {
-                if (fs.existsSync(pageFilePath)) {
-                    fs.unlinkSync(pageFilePath);
-                }
-            } catch (err) {
-                console.error('删除新闻页面文件失败:', err);
             }
         }
         
