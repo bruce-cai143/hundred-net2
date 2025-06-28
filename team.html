@@ -18,7 +18,6 @@
             <div class="nav-links">
                 <a href="index.html">首页</a>
                 <a href="about.html">学校介绍</a>
-                <a href="gallery.html">图片墙</a>
                 <a href="team.html" class="active">青年委员会</a>
                 <a href="download.html">资料下载</a>
                 <a href="contact.html">百人计划</a>
@@ -30,22 +29,23 @@
     <main>
         <section class="about-section">
             <h1 class="section-title">青年委员会</h1>
-            <div class="teachers-grid"></div>
+            <div class="teachers-grid" id="teachers-grid"></div>
         </section>
     </main>
 
     <!-- 页脚 -->
     <footer class="footer-container">
         <div class="footer-content container">
-            <div class="footer-logo">
-                
-                
+            <div class="footer-logo"><br>
             </div>
             <div class="footer-links">
                 <div class="link-column">
                     <h4>快速链接</h4>
                     <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
                     <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                </div>   
+                <div class="link-column">
+                    <h4>快速链接</h4>
                     <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
                     <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
                 </div>
@@ -69,5 +69,43 @@
     </footer>
 
     <script src="scripts/main.js"></script>
+    <script>
+    // 青年委员会成员动态渲染
+    document.addEventListener('DOMContentLoaded', async function() {
+        const grid = document.getElementById('teachers-grid');
+        grid.innerHTML = '<div style="text-align:center;color:#888;">加载中...</div>';
+        try {
+            const res = await fetch('/api/teachers');
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;color:#888;">暂无青年委员会成员信息</div>';
+                return;
+            }
+            grid.innerHTML = '';
+            data.data.forEach(teacher => {
+                const card = document.createElement('div');
+                card.className = 'teacher-card';
+                card.innerHTML = `
+                    <div class="teacher-image">
+                        <img src="${teacher.avatarUrl || teacher.avatar || 'assets/icon/default-avatar.png'}" alt="${teacher.name}">
+                    </div>
+                    <div class="teacher-info">
+                        <h3 class="teacher-name">${teacher.name || ''}</h3>
+                        <div class="teacher-title">${teacher.title || ''}</div>
+                        <p class="teacher-description">${teacher.introduction || ''}</p>
+                        <div class="teacher-social">
+                            <a href="#"><i class="fab fa-weixin"></i></a>
+                            <a href="#"><i class="fas fa-envelope"></i></a>
+                            <a href="#"><i class="fab fa-weibo"></i></a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        } catch (e) {
+            grid.innerHTML = '<div style="text-align:center;color:#888;">加载失败，请稍后重试</div>';
+        }
+    });
+    </script>
 
 </body></html>

@@ -1,6 +1,12 @@
-import { checkAuth, logout, showNotification, formatFileSize as formatFileSizeUtil, authenticatedFetch } from './admin-utils.js';
+import { checkAuth, logout, showNotification, formatFileSize, authenticatedFetch } from './admin-utils.js';
 
-// 文件类型图标
+let currentPage = 1;
+let currentCategory = '';
+let currentSearch = '';
+let currentSort = 'created_at DESC';
+let selectedFile = null;
+let fileToDelete = null;
+
 const fileIcons = {
     'document': '📄',
     'image': '🖼️',
@@ -9,686 +15,281 @@ const fileIcons = {
     'other': '📦'
 };
 
-// 全局变量
-let currentCategory = 'all';
-let currentPage = 1;
-let fileToUpload = null; // 存储要上传的文件
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+    loadFileList();
+});
 
-// 获取文件列表
-export async function getFileList(page = 1, category = 'all') {
-    try {
-        // 检查用户是否已登录，如果未登录会自动重定向
-        if (!checkAuth()) {
-            return;
-        }
-        
-        let url = `/api/media/files?limit=10&offset=${(page - 1) * 10}`;
-        if (category !== 'all') {
-            url += `&category=${category}`;
-        }
-        
-        const response = await authenticatedFetch(url);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || '获取文件列表失败');
-        }
-        
-        const data = await response.json();
-        
-        // 更新全局变量
-        currentPage = page;
-        currentCategory = category;
-        
-        displayFileList(data.files);
-        displayPagination(data.total, page);
-    } catch (error) {
-        console.error('获取文件列表错误:', error);
-        showNotification(error.message, 'error');
+function initializeEventListeners() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') performSearch();
+        });
+    }
+    if (searchBtn) searchBtn.addEventListener('click', performSearch);
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortFilter = document.getElementById('sortFilter');
+    if (categoryFilter) categoryFilter.addEventListener('change', function() {
+        currentCategory = this.value; currentPage = 1; loadFileList();
+    });
+    if (sortFilter) sortFilter.addEventListener('change', function() {
+        currentSort = this.value; currentPage = 1; loadFileList();
+    });
+    initializeUploadEvents();
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', confirmDeleteFile);
+}
+
+function initializeUploadEvents() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+        uploadArea.addEventListener('dragleave', e => { e.preventDefault(); uploadArea.classList.remove('drag-over'); });
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault(); uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFileSelection(files[0]);
+        });
+        uploadArea.addEventListener('click', () => fileInput.click());
+    }
+    if (fileInput) fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) handleFileSelection(this.files[0]);
+    });
+    if (uploadBtn) uploadBtn.addEventListener('click', uploadFile);
+}
+
+function handleFileSelection(file) {
+    selectedFile = file;
+    const validation = validateFile(file);
+    if (!validation.valid) { showNotification(validation.message, 'error'); return; }
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileTitle = document.getElementById('fileTitle');
+    const fileCategory = document.getElementById('fileCategory');
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (fileInfo && fileName && fileSize) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.remove('d-none');
+        if (fileTitle) fileTitle.value = file.name.replace(/\.[^/.]+$/, "");
+        if (fileCategory) fileCategory.value = detectFileCategory(file);
+        if (uploadBtn) uploadBtn.disabled = false;
+    }
+    console.log('文件已选择:', file.name, file.size, file.type);
+}
+
+function validateFile(file) {
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) return { valid: false, message: `文件大小超过限制，最大允许50MB。当前文件大小：${formatFileSize(file.size)}` };
+    return { valid: true };
+}
+
+function detectFileCategory(file) {
+    const mimeType = file.type.split('/')[0];
+    switch (mimeType) {
+        case 'image': return 'image';
+        case 'video': return 'video';
+        case 'audio': return 'audio';
+        case 'application':
+            if (file.name.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i)) return 'document';
+            return 'other';
+        default: return 'other';
     }
 }
 
-// 显示文件列表
+async function uploadFile() {
+    if (!selectedFile) { showNotification('请先选择文件', 'error'); return; }
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 上传中...'; }
+    if (progressDiv) progressDiv.classList.remove('d-none');
+    try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const fileTitle = document.getElementById('fileTitle')?.value || selectedFile.name;
+        const fileCategory = document.getElementById('fileCategory')?.value || detectFileCategory(selectedFile);
+        const fileDescription = document.getElementById('fileDescription')?.value || '';
+        formData.append('title', fileTitle);
+        formData.append('category', fileCategory);
+        formData.append('description', fileDescription);
+        console.log('准备上传文件:', {
+            name: selectedFile.name,
+            size: selectedFile.size,
+            type: selectedFile.type,
+            title: fileTitle,
+            category: fileCategory,
+            description: fileDescription
+        });
+        const xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable && progressBar) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressBar.textContent = Math.round(percentComplete) + '%';
+            }
+        });
+        xhr.addEventListener('load', function() {
+            console.log('上传响应状态:', xhr.status);
+            console.log('上传响应内容:', xhr.responseText);
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showNotification('文件上传成功', 'success');
+                        resetUploadForm();
+                        loadFileList();
+                    } else {
+                        showNotification(response.message || '上传失败', 'error');
+                    }
+                } catch (e) {
+                    showNotification('响应解析失败: ' + e.message, 'error');
+                }
+            } else {
+                showNotification('上传失败，HTTP状态: ' + xhr.status, 'error');
+            }
+            if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> 开始上传'; }
+            if (progressDiv) progressDiv.classList.add('d-none');
+        });
+        xhr.addEventListener('error', function() {
+            console.error('上传请求失败');
+            showNotification('上传失败，请检查网络连接', 'error');
+            if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> 开始上传'; }
+            if (progressDiv) progressDiv.classList.add('d-none');
+        });
+        xhr.open('POST', '/api/media/file-upload');
+        xhr.send(formData);
+    } catch (error) {
+        console.error('上传过程中发生错误:', error);
+        showNotification('上传失败: ' + error.message, 'error');
+        if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> 开始上传'; }
+        if (progressDiv) progressDiv.classList.add('d-none');
+    }
+}
+
+function resetUploadForm() {
+    selectedFile = null;
+    const fileInfo = document.getElementById('fileInfo');
+    const fileInput = document.getElementById('fileInput');
+    const fileTitle = document.getElementById('fileTitle');
+    const fileCategory = document.getElementById('fileCategory');
+    const fileDescription = document.getElementById('fileDescription');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    if (fileInfo) fileInfo.classList.add('d-none');
+    if (fileInput) fileInput.value = '';
+    if (fileTitle) fileTitle.value = '';
+    if (fileCategory) fileCategory.value = '';
+    if (fileDescription) fileDescription.value = '';
+    if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> 开始上传'; }
+    if (progressDiv) progressDiv.classList.add('d-none');
+    if (progressBar) { progressBar.style.width = '0%'; progressBar.textContent = '0%'; }
+}
+
+function performSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) { currentSearch = searchInput.value.trim(); currentPage = 1; loadFileList(); }
+}
+
+async function loadFileList() {
+    try {
+        const fileList = document.getElementById('fileList');
+        if (fileList) fileList.innerHTML = '<div class="col-12 text-center"><div class="spinner-border" role="status"></div></div>';
+        let url = `/api/media/files?limit=12&offset=${(currentPage - 1) * 12}`;
+        if (currentCategory) url += `&category=${encodeURIComponent(currentCategory)}`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+        if (currentSort) { const [sort, order] = currentSort.split(' '); url += `&sort=${sort}&order=${order}`; }
+        console.log('请求文件列表URL:', url);
+        const response = await fetch(url);
+        console.log('文件列表响应状态:', response.status);
+        if (!response.ok) throw new Error('获取文件列表失败');
+        const data = await response.json();
+        console.log('文件列表数据:', data);
+        if (data.success) {
+            displayFileList(data.files);
+            displayPagination(data.total, currentPage);
+        } else {
+            throw new Error(data.message || '获取文件列表失败');
+        }
+    } catch (error) {
+        console.error('加载文件列表失败:', error);
+        showNotification(error.message, 'error');
+        const fileList = document.getElementById('fileList');
+        if (fileList) fileList.innerHTML = `<div class="col-12"><div class="empty-state"><i class="bi bi-exclamation-triangle"></i><h4>加载失败</h4><p>无法加载文件列表，请重试</p></div></div>`;
+    }
+}
+
 function displayFileList(files) {
-    const fileListElement = document.getElementById('fileList');
-    
-    if (!fileListElement) {
-        console.error('文件列表元素不存在');
-        return;
-    }
-    
+    const fileList = document.getElementById('fileList');
+    if (!fileList) return;
     if (files.length === 0) {
-        fileListElement.innerHTML = '<p class="text-center py-4">暂无文件</p>';
+        fileList.innerHTML = `<div class="col-12"><div class="empty-state"><i class="bi bi-folder"></i><h4>暂无文件</h4><p>还没有上传任何文件</p><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bi bi-cloud-upload"></i> 上传第一个文件</button></div></div>`;
         return;
     }
-    
-    fileListElement.innerHTML = files.map(file => {
+    fileList.innerHTML = files.map(file => {
         const icon = fileIcons[file.category] || fileIcons.other;
-        const fileSize = formatFileSizeUtil(file.file_size || file.size);
-        const uploadDate = new Date(file.upload_date || file.created_at).toLocaleString();
-        
-        return `
-            <div class="file-item">
-                <div class="file-icon">${icon}</div>
-                <div class="file-info">
-                    <div class="file-name">${file.title || file.file_name || file.original_name}</div>
-                    <div class="file-meta">
-                        ${file.description ? `<div>${file.description}</div>` : ''}
-                        <div>大小：${fileSize} | 上传时间：${uploadDate}</div>
-                    </div>
-                </div>
-                <div class="file-actions">
-                    <button class="btn-download" onclick="window.downloadFile(${file.id}, '${file.category === 'image' ? 'image' : 'file'}')">下载</button>
-                    <button class="btn-delete" onclick="window.deleteFile(${file.id}, '${file.category === 'image' ? 'image' : 'file'}')">删除</button>
-                </div>
-            </div>
-        `;
+        const fileSize = formatFileSize(file.size);
+        const uploadDate = new Date(file.created_at).toLocaleString();
+        const isImage = file.category === 'image';
+        return `<div class="col-md-6 col-lg-4 mb-4"><div class="file-card"><div class="file-icon">${icon}</div><div class="file-info"><h5>${file.original_name}</h5><div class="file-meta"><div>大小：${fileSize}</div><div>上传时间：${uploadDate}</div></div></div><div class="file-actions">${isImage ? `<button class="btn btn-preview" onclick="previewFile(${file.id})"><i class="bi bi-eye"></i> 预览</button>` : ''}<button class="btn btn-download" onclick="downloadFile(${file.id})"><i class="bi bi-download"></i> 下载</button><button class="btn btn-delete" onclick="deleteFile(${file.id}, '${file.original_name}')"><i class="bi bi-trash"></i> 删除</button></div></div></div>`;
     }).join('');
 }
 
-// 显示分页
 function displayPagination(total, currentPage) {
-    const paginationElement = document.getElementById('pagination');
-    
-    if (!paginationElement) {
-        console.error('分页元素不存在');
-        return;
-    }
-    
-    const totalPages = Math.ceil(total / 10);
-    
-    if (totalPages <= 1) {
-        paginationElement.innerHTML = '';
-        return;
-    }
-    
+    const pagination = document.getElementById('pagination');
+    if (!pagination) return;
+    const totalPages = Math.ceil(total / 12);
+    if (totalPages <= 1) { pagination.innerHTML = ''; return; }
     let paginationHTML = '';
-    
-    // 上一页按钮
-    paginationHTML += `
-        <button 
-            ${currentPage === 1 ? 'disabled' : ''}
-            onclick="window.getFileList(${currentPage - 1}, '${currentCategory}')"
-        >&laquo;</button>
-    `;
-    
-    // 页码按钮
+    paginationHTML += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage - 1})">&laquo;</a></li>`;
     for (let i = 1; i <= totalPages; i++) {
-        // 只显示当前页附近的页码
         if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-            paginationHTML += `
-            <button 
-                ${currentPage === i ? 'class="active"' : ''}
-                    onclick="window.getFileList(${i}, '${currentCategory}')"
-            >${i}</button>
-            `;
+            paginationHTML += `<li class="page-item ${currentPage === i ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`;
         } else if (i === currentPage - 3 || i === currentPage + 3) {
-            paginationHTML += `<span>...</span>`;
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
         }
     }
-    
-    // 下一页按钮
-    paginationHTML += `
-        <button 
-            ${currentPage === totalPages ? 'disabled' : ''}
-            onclick="window.getFileList(${currentPage + 1}, '${currentCategory}')"
-        >&raquo;</button>
-    `;
-    
-    paginationElement.innerHTML = paginationHTML;
+    paginationHTML += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage + 1})">&raquo;</a></li>`;
+    pagination.innerHTML = paginationHTML;
 }
 
-// 下载文件
-export async function downloadFile(id, type = 'file') {
-    try {
-        if (!checkAuth()) {
-            return;
-        }
-        
-    window.open(`/api/media/download/${id}?type=${type}`, '_blank');
-    } catch (error) {
-        console.error('下载文件错误:', error);
-        showNotification('下载文件失败: ' + error.message, 'error');
-    }
+function changePage(page) { currentPage = page; loadFileList(); }
+function previewFile(fileId) { window.open(`/api/media/images/${fileId}`, '_blank'); }
+function downloadFile(fileId) { window.open(`/api/media/download/${fileId}`, '_blank'); }
+function deleteFile(fileId, fileName) {
+    fileToDelete = { id: fileId, name: fileName };
+    const deleteFileName = document.getElementById('deleteFileName');
+    if (deleteFileName) deleteFileName.textContent = fileName;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
 }
-
-// 删除文件
-export async function deleteFile(id, type = 'file') {
+async function confirmDeleteFile() {
+    if (!fileToDelete) return;
     try {
-        if (!checkAuth()) {
-            return;
-        }
-        
-        if (!confirm('确定要删除这个文件吗？此操作无法撤销。')) {
-            return;
-        }
-        
-        const response = await authenticatedFetch(`/api/media/file/${id}?type=${type}`, {
-            method: 'DELETE'
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || '删除文件失败');
-        }
-        
+        const response = await fetch(`/api/media/${fileToDelete.id}`, { method: 'DELETE', credentials: 'include' });
+        if (!response.ok) throw new Error('删除失败');
         const data = await response.json();
-        
-        showNotification(data.message || '文件删除成功', 'success');
-        getFileList(currentPage, currentCategory); // 刷新文件列表
-    } catch (error) {
-        console.error('删除文件错误:', error);
-        showNotification('删除文件失败: ' + error.message, 'error');
-    }
-}
-
-// 验证文件
-function validateFile(file) {
-    // 验证文件大小（最大50MB）
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-        return {
-            valid: false,
-            message: `文件大小超过限制，最大允许50MB。当前文件大小：${formatFileSizeUtil(file.size)}`
-        };
-    }
-    
-    // 验证文件类型
-    const allowedTypes = {
-        // 图片文件
-        'image/jpeg': true,
-        'image/png': true,
-        'image/gif': true,
-        'image/webp': true,
-        // 文档文件
-        'application/pdf': true,
-        'application/msword': true,
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': true,
-        'application/vnd.ms-excel': true,
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': true,
-        'application/vnd.ms-powerpoint': true,
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': true,
-        // 视频文件
-        'video/mp4': true,
-        'video/webm': true,
-        'video/ogg': true,
-        // 音频文件
-        'audio/mpeg': true,
-        'audio/wav': true,
-        'audio/ogg': true,
-        // 压缩文件
-        'application/zip': true,
-        'application/x-rar-compressed': true,
-        'application/x-7z-compressed': true,
-        // 文本文件
-        'text/plain': true
-    };
-    
-    if (!allowedTypes[file.type]) {
-        return {
-            valid: false,
-            message: `不支持的文件类型：${file.type}`
-        };
-    }
-    
-    return {
-        valid: true,
-        message: '文件验证通过'
-    };
-}
-
-// 处理文件选择
-function handleFileSelection(file) {
-    try {
-        if (!file) return;
-        
-        // 验证文件
-        const validation = validateFile(file);
-        
-        // 显示验证结果
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        if (!uploadArea) {
-            console.error('上传区域元素不存在');
-            return;
-        }
-        
-        // 如果验证失败
-        if (!validation.valid) {
-            showNotification(validation.message, 'error');
-            return;
-        }
-        
-        fileToUpload = file;
-        
-        // 根据文件类型设置图标和类别
-        let fileType = file.type.split('/')[0];
-        let icon = fileIcons.other;
-        let category = 'other';
-    
-    switch (fileType) {
-        case 'image':
-                icon = fileIcons.image;
-                category = 'image';
-            break;
-        case 'video':
-                icon = fileIcons.video;
-                category = 'video';
-            break;
-        case 'audio':
-                icon = fileIcons.audio;
-                category = 'audio';
-            break;
-        case 'application':
-            if (file.name.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i)) {
-                    icon = fileIcons.document;
-                    category = 'document';
-            } else {
-                    icon = fileIcons.other;
-                    category = 'other';
-            }
-            break;
-        default:
-                icon = fileIcons.other;
-                category = 'other';
-        }
-        
-        // 设置文件分类
-        const categorySelect = document.getElementById('fileCategory');
-        if (categorySelect) {
-            categorySelect.value = category;
-        }
-        
-        uploadArea.innerHTML = `
-            <div class="selected-file">
-                <div class="file-icon">${icon}</div>
-                <div class="file-info">
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-size">${formatFileSizeUtil(file.size)}</div>
-                </div>
-                <button type="button" class="btn-cancel" id="cancelUpload">取消</button>
-            </div>
-            <div class="file-validation valid">
-                <i class="bi bi-check-circle"></i> 文件验证通过
-            </div>
-        `;
-        
-        // 重新添加文件输入框
-        if (fileInput) {
-            uploadArea.appendChild(fileInput);
-        }
-        
-        // 添加取消上传按钮事件
-        document.getElementById('cancelUpload')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetUploadArea();
-        });
-        
-        console.log("文件已选择:", file.name);
-    } catch (error) {
-        console.error('处理文件选择错误:', error);
-        showNotification('处理文件选择失败: ' + error.message, 'error');
-    }
-}
-
-// 重置上传区域
-function resetUploadArea() {
-    try {
-        fileToUpload = null;
-        const uploadArea = document.getElementById('uploadArea');
-        
-        if (!uploadArea) {
-            console.error('上传区域元素不存在');
-            return;
-        }
-        
-        // 保存原有的fileInput，以保留其事件监听器
-        const oldFileInput = document.getElementById('fileInput');
-        
-        uploadArea.innerHTML = `
-            <i class="file-icon">📁</i>
-            <p>拖拽文件到此处或点击上传</p>
-        `;
-        
-        // 重新插入原有的fileInput或创建新的
-        if (oldFileInput) {
-            uploadArea.appendChild(oldFileInput);
+        if (data.success) {
+            showNotification('文件删除成功', 'success');
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+            if (deleteModal) deleteModal.hide();
+            loadFileList();
         } else {
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.id = 'fileInput';
-            newInput.style.display = 'none';
-            newInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    handleFileSelection(this.files[0]);
-                }
-            });
-            uploadArea.appendChild(newInput);
-        }
-        
-        // 重置表单字段
-        const categorySelect = document.getElementById('fileCategory');
-        const descriptionField = document.getElementById('fileDescription');
-        const progressElement = document.getElementById('uploadProgress');
-        
-        if (categorySelect) categorySelect.value = '';
-        if (descriptionField) descriptionField.value = '';
-        if (progressElement) progressElement.innerHTML = '';
-    } catch (error) {
-        console.error('重置上传区域错误:', error);
-        showNotification('重置上传区域失败: ' + error.message, 'error');
-    }
-}
-
-// 上传文件
-async function uploadFile() {
-    try {
-        // 检查用户是否已登录
-        if (!checkAuth()) {
-            showNotification('请先登录后再上传文件', 'warning');
-            return;
-        }
-        
-        // 检查是否已选择文件
-        if (!fileToUpload) {
-            showNotification('请先选择要上传的文件', 'warning');
-            return;
-        }
-        
-        // 再次验证文件
-        const validation = validateFile(fileToUpload);
-        if (!validation.valid) {
-            showNotification(validation.message, 'error');
-            return;
-        }
-        
-        // 获取表单元素
-        const categorySelect = document.getElementById('fileCategory');
-        const descriptionField = document.getElementById('fileDescription');
-        
-        // 验证文件分类
-        if (!categorySelect || !categorySelect.value) {
-            showNotification('请选择文件分类', 'warning');
-            categorySelect?.classList.add('error');
-            return;
-        } else {
-            categorySelect.classList.remove('error');
-        }
-        
-        // 准备FormData对象
-        const formData = new FormData();
-        formData.append('file', fileToUpload);
-        formData.append('category', categorySelect.value);
-        
-        if (descriptionField && descriptionField.value) {
-            formData.append('description', descriptionField.value);
-        }
-        
-        // 更新上传区域状态
-        const uploadArea = document.getElementById('uploadArea');
-        if (uploadArea) {
-            uploadArea.classList.add('uploading');
-        }
-        
-        // 初始化进度条
-        const progressElement = document.getElementById('uploadProgress');
-        if (progressElement) {
-            progressElement.innerHTML = '<div class="progress-bar"><div class="progress"></div></div><div class="progress-text">上传中... 0%</div>';
-        }
-        
-        const progressBar = progressElement?.querySelector('.progress');
-        const progressText = progressElement?.querySelector('.progress-text');
-        
-        // 使用XMLHttpRequest以支持上传进度
-        const xhr = new XMLHttpRequest();
-        
-        // 设置进度监听
-        xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable && progressBar && progressText) {
-                const percentComplete = Math.round((event.loaded / event.total) * 100);
-                progressBar.style.width = percentComplete + '%';
-                progressText.textContent = `上传中... ${percentComplete}%`;
-            }
-        });
-        
-        // 创建Promise以更好地处理XHR事件
-        const uploadPromise = new Promise((resolve, reject) => {
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        resolve(response);
-                    } catch (e) {
-                        reject(new Error('解析服务器响应失败'));
-                    }
-                } else {
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        reject(new Error(errorResponse.message || '上传失败'));
-                    } catch (e) {
-                        reject(new Error('上传失败: 服务器响应异常'));
-                    }
-                }
-            });
-            
-            xhr.addEventListener('error', () => {
-                reject(new Error('网络错误，上传失败'));
-            });
-            
-            xhr.addEventListener('abort', () => {
-                reject(new Error('上传已取消'));
-            });
-        });
-        
-        // 开始上传
-        xhr.open('POST', '/api/media/file-upload');
-        
-        // 使用认证Token
-        // 注意: 我们使用session认证，不需要额外的token
-        xhr.withCredentials = true; // 确保跨域请求发送cookies
-        
-        xhr.send(formData);
-        
-        try {
-            // 等待上传完成
-            const response = await uploadPromise;
-            
-            // 更新进度条为完成状态
-            if (progressBar && progressText) {
-                progressBar.style.width = '100%';
-                progressText.textContent = '上传成功!';
-                progressText.style.color = 'green';
-            }
-            
-            // 移除上传区域状态
-            if (uploadArea) {
-                uploadArea.classList.remove('uploading');
-            }
-            
-            // 显示成功消息
-            setTimeout(() => {
-                showNotification(response.message || '文件上传成功', 'success');
-                resetUploadArea();
-                getFileList(currentPage, currentCategory); // 刷新文件列表
-            }, 1000);
-        } catch (error) {
-            // 移除上传区域状态
-            if (uploadArea) {
-                uploadArea.classList.remove('uploading');
-            }
-            
-            // 更新进度条为失败状态
-            if (progressText) {
-                progressText.textContent = '上传失败!';
-                progressText.style.color = 'red';
-            }
-            
-            throw error; // 重新抛出以便外部catch捕获
+            throw new Error(data.message || '删除失败');
         }
     } catch (error) {
-        console.error('文件上传错误:', error);
-        showNotification('文件上传失败: ' + error.message, 'error');
+        showNotification('删除失败: ' + error.message, 'error');
+    } finally {
+        fileToDelete = null;
     }
 }
-
-// 过滤文件类别
-function filterByCategory(category) {
-    currentCategory = category;
-    currentPage = 1;
-    getFileList(currentPage, currentCategory);
-    
-    // 更新UI显示当前分类
-    const categoryButtons = document.querySelectorAll('#categoryFilter option');
-    categoryButtons.forEach(button => {
-        if (button.value === category) {
-            button.selected = true;
-        }
-    });
-}
-
-// 搜索文件
-async function searchFiles() {
-    try {
-        const searchTerm = document.getElementById('searchFiles')?.value.trim();
-        if (!searchTerm) {
-            getFileList(1, currentCategory);
-            return;
-        }
-        
-        if (!checkAuth()) {
-            return;
-        }
-        
-        showNotification('搜索功能正在开发中...', 'info');
-        // 将来可以添加搜索API调用
-    } catch (error) {
-        console.error('搜索文件错误:', error);
-        showNotification('搜索文件失败: ' + error.message, 'error');
-    }
-}
-
-// 初始化事件监听
-function initializeEventListeners() {
-    console.log("正在初始化事件监听器...");
-    
-    // 确保上传区域存在
-    const uploadArea = document.getElementById('uploadArea');
-    if (!uploadArea) {
-        console.error("上传区域元素不存在!");
-        return;
-    }
-    
-    // 确保文件输入框存在
-    let fileInput = document.getElementById('fileInput');
-    if (!fileInput) {
-        fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.id = 'fileInput';
-        fileInput.style.display = 'none';
-        uploadArea.appendChild(fileInput);
-    }
-    
-    // 文件上传区域点击事件
-    uploadArea.addEventListener('click', function(e) {
-        console.log("上传区域被点击");
-        // 避免冒泡到子元素
-        if (e.target === this || e.target.tagName !== 'BUTTON') {
-            fileInput.click();
-        }
-    });
-    
-    // 拖拽相关事件
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.classList.add('dragover');
-        console.log("拖拽悬停");
-    });
-    
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.classList.remove('dragover');
-        console.log("拖拽离开");
-    });
-    
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.classList.remove('dragover');
-        console.log("文件已放下");
-        
-        if (e.dataTransfer.files.length > 0) {
-            handleFileSelection(e.dataTransfer.files[0]);
-        }
-    });
-    
-    // 文件输入框变更事件
-    fileInput.addEventListener('change', function() {
-        console.log("文件输入已变更:", this.files.length);
-        if (this.files.length > 0) {
-            handleFileSelection(this.files[0]);
-        }
-    });
-    
-    // 上传按钮
-    const uploadBtn = document.getElementById('uploadBtn');
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', uploadFile);
-        console.log("上传按钮事件已添加");
-    } else {
-        console.error("上传按钮不存在!");
-    }
-    
-    // 分类过滤
-    const categoryFilter = document.getElementById('categoryFilter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', function() {
-            filterByCategory(this.value);
-        });
-    }
-    
-    // 搜索
-    const searchFilesInput = document.getElementById('searchFiles');
-    if (searchFilesInput) {
-        searchFilesInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchFiles();
-            }
-        });
-    }
-    
-    // 暴露函数到全局作用域，解决动态创建的DOM元素中事件调用问题
-    window.downloadFile = downloadFile;
-    window.deleteFile = deleteFile;
-    window.getFileList = getFileList;
-    window.handleFileSelection = handleFileSelection;
-    
-    console.log("事件监听器初始化完成");
-}
-
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM内容已加载");
-    
-    // 检查用户是否已登录
-    if (checkAuth()) {
-    getFileList();
-    }
-    
-    // 延迟初始化事件监听器，确保DOM元素已完全加载
-    setTimeout(() => {
-    initializeEventListeners();
-        console.log("上传按钮存在:", !!document.getElementById('uploadBtn'));
-    }, 500);
-});
-
-// 导出必要的函数
-export {
-    getFileList,
-    downloadFile,
-    deleteFile,
-    currentCategory,
-    currentPage
-};
+window.changePage = changePage;
+window.previewFile = previewFile;
+window.downloadFile = downloadFile;
+window.deleteFile = deleteFile; 

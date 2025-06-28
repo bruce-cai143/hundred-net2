@@ -74,7 +74,7 @@ exports.getTeacher = async (req, res) => {
 // 添加委员会成员
 exports.addTeacher = async (req, res) => {
     try {
-        const { name, title, specialty, contact, introduction, status } = req.body;
+        const { name, title, contact, introduction, status } = req.body;
         
         // 处理文件上传
         let avatar = '';
@@ -100,12 +100,11 @@ exports.addTeacher = async (req, res) => {
         const teacher = await Teacher.create({
             name,
             title,
-            specialty,
             contact: contact || '',
             introduction: introduction || '',
             avatar,
             status: status === 'true' || status === true,
-            order: 999 // 默认排序值
+            order: 999
         });
         
         res.status(201).json({
@@ -138,7 +137,7 @@ exports.addTeacher = async (req, res) => {
 // 更新委员会成员
 exports.updateTeacher = async (req, res) => {
     try {
-        const { name, title, specialty, contact, introduction, status } = req.body;
+        const { name, title, contact, introduction, status } = req.body;
         
         // 查找现有记录
         const teacher = await Teacher.findById(req.params.id);
@@ -182,7 +181,6 @@ exports.updateTeacher = async (req, res) => {
             {
                 name,
                 title,
-                specialty,
                 contact: contact || '',
                 introduction: introduction || '',
                 avatar,

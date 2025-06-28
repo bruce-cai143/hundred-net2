@@ -178,24 +178,15 @@ router.post('/file-upload', auth.authenticateToken, upload.single('file'), async
 
         // 记录文件信息到数据库
         const [result] = await db.query(
-            'INSERT INTO files (filename, original_name, mime_type, size, path, category, title, description, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO files (filename, original_name, mime_type, size, path, category) VALUES (?, ?, ?, ?, ?, ?)',
             [
                 req.file.filename,
                 req.file.originalname,
                 req.file.mimetype,
                 req.file.size,
                 req.file.path,
-                fileCategory,
-                fileTitle,
-                description || null,
-                req.user.id
+                fileCategory
             ]
-        );
-
-        // 记录上传活动
-        await db.query(
-            'INSERT INTO activities (user_id, type, description) VALUES (?, ?, ?)',
-            [req.user.id, 'file', `上传了文件: ${fileTitle}`]
         );
 
         res.json({
@@ -210,8 +201,7 @@ router.post('/file-upload', auth.authenticateToken, upload.single('file'), async
                 size: req.file.size,
                 path: req.file.path,
                 category: fileCategory,
-                description: description || null,
-                upload_date: new Date()
+                created_at: new Date()
             }
         });
     } catch (error) {
@@ -226,22 +216,25 @@ router.post('/file-upload', auth.authenticateToken, upload.single('file'), async
  */
 router.get('/files', async (req, res) => {
     try {
-        const { category, type, limit = 20, offset = 0, sort = 'created_at', order = 'DESC' } = req.query;
+        const { category, search, limit = 20, offset = 0, sort = 'created_at', order = 'DESC' } = req.query;
         
-        let tableName = 'files';
-        if (type === 'image') {
-            tableName = 'images';
-        }
-        
-        let query = `SELECT * FROM ${tableName} where size > 0`;
-        let countQuery = `SELECT COUNT(*) as total FROM ${tableName} where size > 0`;
+        let query = 'SELECT * FROM files';
+        let countQuery = 'SELECT COUNT(*) as total FROM files';
         
         const queryParams = [];
         
-        if (category) {
-            query += ' AND category = ?';
-            countQuery += ' AND category = ?';
+        if (category && category !== 'all') {
+            query += ' WHERE category = ?';
+            countQuery += ' WHERE category = ?';
             queryParams.push(category);
+        }
+        
+        if (search) {
+            const whereClause = category && category !== 'all' ? ' AND' : ' WHERE';
+            query += `${whereClause} (filename LIKE ? OR original_name LIKE ?)`;
+            countQuery += `${whereClause} (filename LIKE ? OR original_name LIKE ?)`;
+            const searchTerm = `%${search}%`;
+            queryParams.push(searchTerm, searchTerm);
         }
         
         // 添加排序和分页
@@ -249,7 +242,7 @@ router.get('/files', async (req, res) => {
         queryParams.push(parseInt(limit), parseInt(offset));
         
         const [files] = await db.query(query, queryParams);
-        const [countResult] = await db.query(countQuery, category ? [category] : []);
+        const [countResult] = await db.query(countQuery, queryParams.slice(0, -2));
         
         res.json({
             success: true,
@@ -265,6 +258,45 @@ router.get('/files', async (req, res) => {
 });
 
 /**
+ * 获取图片列表
+ * GET /api/media/images
+ */
+router.get('/images', async (req, res) => {
+    try {
+        const { category, limit = 20, offset = 0, sort = 'created_at', order = 'DESC' } = req.query;
+        
+        let query = 'SELECT id, filename, original_name, mime_type, size, path, category, created_at FROM files WHERE category = "image"';
+        let countQuery = 'SELECT COUNT(*) as total FROM files WHERE category = "image"';
+        
+        const queryParams = [];
+        
+        if (category && category !== 'uncategorized') {
+            query += ' AND category = ?';
+            countQuery += ' AND category = ?';
+            queryParams.push(category);
+        }
+        
+        // 添加排序和分页
+        query += ` ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`;
+        queryParams.push(parseInt(limit), parseInt(offset));
+        
+        const [images] = await db.query(query, queryParams);
+        const [countResult] = await db.query(countQuery, category && category !== 'uncategorized' ? [category] : []);
+        
+        res.json({
+            success: true,
+            images,
+            total: countResult[0].total,
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+    } catch (error) {
+        console.error('获取图片列表错误:', error);
+        res.status(500).json({ success: false, message: '获取图片列表失败', error: error.message });
+    }
+});
+
+/**
  * 获取单个文件信息
  * GET /api/media/file/:id
  */
@@ -273,11 +305,11 @@ router.get('/file/:id', async (req, res) => {
         const { id } = req.params;
         const { type = 'file' } = req.query;
         
-        const tableName = type === 'image' ? 'images' : 'files';
+        const tableName = type === 'image' ? 'files' : 'files';
         
         const [files] = await db.query(
-            `SELECT id, title, description, file_name, file_size, file_type, upload_date, category FROM ${tableName} WHERE id = ? AND status = 1`,
-            [id]
+            `SELECT id, filename, original_name, mime_type, size, path, category, created_at FROM ${tableName} WHERE id = ? AND category = ?`,
+            [id, type === 'image' ? 'image' : 'file']
         );
         
         if (files.length === 0) {
@@ -295,18 +327,74 @@ router.get('/file/:id', async (req, res) => {
 });
 
 /**
+ * 获取单个图片
+ * GET /api/media/images/:id
+ */
+router.get('/images/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const [images] = await db.query(
+            'SELECT id, filename, original_name, mime_type, path, category, created_at FROM files WHERE id = ? AND category = "image"',
+            [id]
+        );
+        
+        if (images.length === 0) {
+            return res.status(404).json({ success: false, message: '图片不存在' });
+        }
+        
+        const image = images[0];
+        
+        // 检查文件是否存在
+        if (!fs.existsSync(image.path)) {
+            return res.status(404).json({ success: false, message: '图片文件不存在' });
+        }
+        
+        // 设置响应头
+        const mimeTypes = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp'
+        };
+        
+        // 从mime_type或original_name推断文件类型
+        let fileType = 'jpeg';
+        if (image.mime_type) {
+            const mimeParts = image.mime_type.split('/');
+            if (mimeParts.length > 1) {
+                fileType = mimeParts[1];
+            }
+        } else if (image.original_name) {
+            const ext = image.original_name.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                fileType = ext;
+            }
+        }
+        
+        const contentType = mimeTypes[fileType] || 'image/jpeg';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'public, max-age=31536000'); // 缓存1年
+        
+        // 发送图片文件
+        res.sendFile(image.path);
+    } catch (error) {
+        console.error('获取图片错误:', error);
+        res.status(500).json({ success: false, message: '获取图片失败', error: error.message });
+    }
+});
+
+/**
  * 下载文件
  * GET /api/media/download/:id
  */
 router.get('/download/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { type = 'file' } = req.query;
-        
-        const tableName = type === 'image' ? 'images' : 'files';
         
         const [files] = await db.query(
-            `SELECT id, title, file_name, file_data, file_type FROM ${tableName} WHERE id = ? AND status = 1`,
+            'SELECT id, filename, original_name, mime_type, path FROM files WHERE id = ?',
             [id]
         );
         
@@ -316,36 +404,17 @@ router.get('/download/:id', async (req, res) => {
         
         const file = files[0];
         
-        // 更新下载计数（仅适用于文件表）
-        if (tableName === 'files') {
-            await db.query('UPDATE files SET download_count = download_count + 1 WHERE id = ?', [id]);
+        // 检查文件是否存在
+        if (!fs.existsSync(file.path)) {
+            return res.status(404).json({ success: false, message: '文件不存在' });
         }
         
         // 设置响应头
-        // 根据file_type设置正确的Content-Type
-        const mimeTypes = {
-            'pdf': 'application/pdf',
-            'doc': 'application/msword',
-            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls': 'application/vnd.ms-excel',
-            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'ppt': 'application/vnd.ms-powerpoint',
-            'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'png': 'image/png',
-            'gif': 'image/gif',
-            'txt': 'text/plain',
-            'zip': 'application/zip',
-            'rar': 'application/x-rar-compressed',
-            '7z': 'application/x-7z-compressed'
-        };
-        const contentType = mimeTypes[file.file_type.toLowerCase()] || 'application/octet-stream';
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.file_name)}"`);
+        res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.original_name)}"`);
         
-        // 发送文件数据
-        res.send(file.file_data);
+        // 发送文件
+        res.sendFile(file.path);
     } catch (error) {
         console.error('文件下载错误:', error);
         res.status(500).json({ success: false, message: '文件下载失败', error: error.message });
@@ -359,12 +428,23 @@ router.get('/download/:id', async (req, res) => {
 router.delete('/:id', auth.requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const { type = 'file' } = req.query;
         
-        const tableName = type === 'image' ? 'images' : 'files';
+        // 获取文件信息
+        const [files] = await db.query('SELECT path FROM files WHERE id = ?', [id]);
         
-        // 软删除文件
-        await db.query(`UPDATE ${tableName} SET status = 0 WHERE id = ?`, [id]);
+        if (files.length === 0) {
+            return res.status(404).json({ success: false, message: '文件不存在' });
+        }
+        
+        const file = files[0];
+        
+        // 删除物理文件
+        if (fs.existsSync(file.path)) {
+            await promisify(fs.unlink)(file.path);
+        }
+        
+        // 删除数据库记录
+        await db.query('DELETE FROM files WHERE id = ?', [id]);
         
         res.json({
             success: true,

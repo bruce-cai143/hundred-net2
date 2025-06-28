@@ -37,6 +37,25 @@ function showToast(type, message) {
     }
 }
 
+// 显示提示信息
+function showNotification(message, type = 'info') {
+    // 如果页面中已经有toast插件，使用它
+    if (window.Swal) {
+        Swal.fire({
+            icon: type === 'success' ? 'success' : type === 'error' ? 'error' : 'info',
+            title: type === 'success' ? '成功' : type === 'error' ? '错误' : '提示',
+            text: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    } else {
+        // 否则使用简单的原生方式
+        alert(message);
+    }
+}
+
 // 确认删除对话框
 async function confirmDelete(message) {
     if (window.Swal) {
@@ -53,6 +72,36 @@ async function confirmDelete(message) {
         return result.isConfirmed;
     } else {
         return confirm(message);
+    }
+}
+
+// 检查认证状态
+async function checkAuth() {
+    try {
+        // 验证会话状态
+        const response = await fetch('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include' // 确保发送cookie
+        });
+        
+        if (!response.ok) {
+            throw new Error('未登录或会话已过期');
+        }
+        
+        const data = await response.json();
+        if (data.user) {
+            // 更新管理员名称显示
+            const adminNameElement = document.getElementById('admin-name');
+            if (adminNameElement) {
+                adminNameElement.textContent = data.user.name || data.user.username || '管理员';
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('验证登录状态失败:', error);
+        window.location.href = '/admin/login.html';
+        return false;
     }
 }
 
@@ -112,6 +161,29 @@ async function apiRequest(url, options = {}, isFormData = false) {
         console.error('API请求失败:', error);
         throw error;
     }
+}
+
+// 带认证的fetch请求
+async function authenticatedFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'include', // 确保发送cookie
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+    
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    const response = await fetch(url, mergedOptions);
+    
+    // 处理未授权响应
+    if (response.status === 401) {
+        window.location.href = '/admin/login.html';
+        throw new Error('未登录或会话已过期');
+    }
+    
+    return response;
 }
 
 // 退出登录
@@ -179,9 +251,12 @@ export {
     formatFileSize,
     formatDate,
     showToast,
+    showNotification,
     confirmDelete,
+    checkAuth,
     checkLogin,
     apiRequest,
+    authenticatedFetch,
     logout,
     debounce,
     getFileIcon

@@ -46,7 +46,7 @@ function displayImages(images) {
                 <div class="card-body">
                     <h5 class="card-title">${image.title}</h5>
                     <p class="card-text">
-                        <small class="text-muted">上传时间: ${new Date(image.upload_date).toLocaleDateString()}</small>
+                        <small class="text-muted">上传时间: ${new Date(image.created_at).toLocaleDateString()}</small>
                         <br>
                         <small class="text-muted">分类: ${image.category || '未分类'}</small>
                     </p>

@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/animations.css">
     <link rel="stylesheet" href="styles/pages.css">
+    <!-- 添加Bootstrap支持 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .download-container {
             max-width: 1200px;
@@ -137,6 +139,87 @@
             padding: 50px;
             color: #666;
         }
+        /* 图片墙样式 */
+        #image-gallery-section {
+            display: none;
+            margin-top: 30px;
+        }
+        .gallery-container {
+            margin-top: 20px;
+        }
+        
+        /* 图片卡片样式 */
+        #gallery-container .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        #gallery-container .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        #gallery-container .card-img-top {
+            transition: transform 0.3s ease;
+        }
+        
+        #gallery-container .card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+        
+        #gallery-container .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        #gallery-container .card-text {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* 分类过滤器样式 */
+        .category-filter .btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .category-filter .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 图片分页样式 */
+        #image-pagination {
+            margin-top: 30px;
+            justify-content: center;
+        }
+        
+        #image-pagination .pagination-btn {
+            margin: 0 5px;
+        }
+        
+        /* 加载进度条样式 */
+        #loading-progress {
+            margin: 20px 0;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            #gallery-container .col-md-4 {
+                margin-bottom: 20px;
+            }
+            
+            .category-filter .btn {
+                margin-bottom: 8px;
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+        }
     </style>
 </head>
 <body class="subtle-bg">
@@ -150,7 +233,6 @@
             <div class="nav-links">
                 <a href="index.html">首页</a>
                 <a href="about.html">学校介绍</a>
-                <a href="gallery.html">图片墙</a>
                 <a href="team.html">青年委员会</a>
                 <a href="download.html" class="active">资料下载</a>
                 <a href="contact.html">百人计划</a>
@@ -185,6 +267,32 @@
             <div class="file-grid" id="fileGrid"></div>
 
             <div class="pagination" id="pagination"></div>
+
+            <!-- 图片展示区域 -->
+            <section id="image-gallery-section" class="gallery-container">
+                <h2 class="section-title mb-4">校园图集</h2>
+                
+                <!-- 分类过滤器 -->
+                <div class="category-filter mb-4">
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('uncategorized')">全部</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('activities')">校园活动</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('campus')">校园环境</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('events')">重要事件</button>
+                </div>
+
+                <!-- 图片加载进度条 -->
+                <div id="loading-progress" class="progress mb-4 d-none">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+
+                <!-- 图片展示区域 -->
+                <div id="gallery-container" class="row g-4">
+                    <!-- 图片将通过JavaScript动态加载 -->
+                </div>
+
+                <!-- 图片分页 -->
+                <div class="pagination" id="image-pagination"></div>
+            </section>
         </div>
     </main>
 
@@ -218,6 +326,9 @@
         </div>
     </footer>
 
+    <!-- JavaScript依赖 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/main.js"></script>
     <script>
         // 文件类型图标
         const fileIcons = {
@@ -227,212 +338,108 @@
             'audio': '🎵',
             'other': '📦'
         };
-        
-        // 当前页码和筛选条件
         let currentPage = 1;
-        let currentCategory = 'all';
-        let searchQuery = '';
-        
-        // 获取文件列表
-        async function getFileList(page = 1, category = 'all', query = '') {
+        let currentCategory = '';
+        let currentSearch = '';
+        const pageSize = 12;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            bindDownloadEvents();
+            loadFiles();
+        });
+
+        function bindDownloadEvents() {
+            // 搜索
+            document.getElementById('searchBtn').onclick = function() {
+                currentSearch = document.getElementById('searchInput').value.trim();
+                currentPage = 1;
+                loadFiles();
+            };
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentSearch = this.value.trim();
+                    currentPage = 1;
+                    loadFiles();
+                }
+            });
+            // 分类
+            document.querySelectorAll('.file-category').forEach(el => {
+                el.onclick = function() {
+                    document.querySelectorAll('.file-category').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category === 'all' ? '' : this.dataset.category;
+                    currentPage = 1;
+                    loadFiles();
+                };
+            });
+        }
+
+        async function loadFiles() {
+            const grid = document.getElementById('fileGrid');
+            grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border" role="status"></div></div>';
+            let url = `/api/media/files?limit=${pageSize}&offset=${(currentPage-1)*pageSize}`;
+            if (currentCategory) url += `&category=${encodeURIComponent(currentCategory)}`;
+            if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+            url += '&sort=created_at&order=DESC';
             try {
-                let url = `/api/media/files?limit=12&offset=${(page - 1) * 12}`;
-                
-                if (category !== 'all') {
-                    url += `&category=${category}`;
-                }
-                
-                if (query) {
-                    url += `&search=${encodeURIComponent(query)}`;
-                }
-                
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.message || '获取文件列表失败');
-                }
-                
-                displayFileList(data.files);
-                displayPagination(data.total, page);
-            } catch (error) {
-                console.error('获取文件列表失败:', error);
-                document.getElementById('fileGrid').innerHTML = `
-                    <div class="no-files">
-                        <h3>暂无文件</h3>
-                        <p>${error.message}</p>
-                    </div>
-                `;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || '加载失败');
+                renderFileGrid(data.files);
+                renderPagination(data.total, currentPage);
+            } catch (e) {
+                grid.innerHTML = `<div class='col-12 text-center text-danger py-5'>${e.message}</div>`;
+                document.getElementById('pagination').innerHTML = '';
             }
         }
-        
-        // 显示文件列表
-        function displayFileList(files) {
-            const fileGrid = document.getElementById('fileGrid');
-            
+
+        function renderFileGrid(files) {
+            const grid = document.getElementById('fileGrid');
             if (!files || files.length === 0) {
-                fileGrid.innerHTML = `
-                    <div class="no-files">
-                        <h3>暂无文件</h3>
-                        <p>请稍后再来查看</p>
-                    </div>
-                `;
+                grid.innerHTML = `<div class='no-files'>暂无可下载文件</div>`;
                 return;
             }
-            
-            fileGrid.innerHTML = files.map(file => {
+            grid.innerHTML = files.map(file => {
                 const icon = fileIcons[file.category] || fileIcons.other;
-                const fileSize = formatFileSize(file.file_size);
-                const uploadDate = new Date(file.upload_date).toLocaleDateString('zh-CN');
-                
-                return `
-                    <div class="file-card card hover-lift">
-                        <div class="file-icon">${icon}</div>
-                        <div class="file-info">
-                            <div class="file-name">${file.title}</div>
-                            <div class="file-meta">
-                                <div>文件名: ${file.file_name}</div>
-                                <div>大小: ${fileSize} | 上传时间: ${uploadDate}</div>
-                            </div>
-                            <div class="file-description">${file.description || '无描述'}</div>
-                        </div>
-                        <div class="file-actions">
-                            <button class="download-btn" onclick="downloadFile(${file.id}, '${file.category === 'image' ? 'image' : 'file'}')">
-                                <span>下载</span>
-                                <span>⬇️</span>
-                            </button>
-                            <div class="download-count">下载次数: ${file.download_count || 0}</div>
-                        </div>
+                const fileSize = formatFileSize(file.size);
+                const uploadDate = new Date(file.created_at).toLocaleDateString();
+                return `<div class='file-card'>
+                    <div class='file-icon'>${icon}</div>
+                    <div class='file-info'>
+                        <div class='file-name'>${file.original_name}</div>
+                        <div class='file-meta'>${fileSize} | 上传：${uploadDate}</div>
                     </div>
-                `;
+                    <div class='file-actions'>
+                        <button class='download-btn' onclick='window.open("/api/media/download/${file.id}")'><i class='bi bi-download'></i> 下载</button>
+                    </div>
+                </div>`;
             }).join('');
         }
-        
-        // 显示分页
-        function displayPagination(total, currentPage) {
-            const paginationElement = document.getElementById('pagination');
-            const totalPages = Math.ceil(total / 12);
-            
-            if (totalPages <= 1) {
-                paginationElement.style.display = 'none';
-                return;
-            }
-            
-            paginationElement.style.display = 'flex';
-            
-            const pages = [];
-            
-            // 添加上一页按钮
-            if (currentPage > 1) {
-                pages.push(`<button class="pagination-btn prev" onclick="changePage(${currentPage - 1})">上一页</button>`);
-            }
-            
-            // 添加页码按钮
-            for (let i = 1; i <= totalPages; i++) {
-                if (
-                    i === 1 || 
-                    i === totalPages || 
-                    (i >= currentPage - 2 && i <= currentPage + 2)
-                ) {
-                    pages.push(`
-                        <button 
-                            class="pagination-btn ${currentPage === i ? 'active' : ''}"
-                            onclick="changePage(${i})"
-                        >${i}</button>
-                    `);
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    pages.push(`<span class="pagination-ellipsis">...</span>`);
+
+        function renderPagination(total, page) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pag = document.getElementById('pagination');
+            if (totalPages <= 1) { pag.innerHTML = ''; return; }
+            let html = '';
+            html += `<button class='pagination-btn' ${page===1?'disabled':''} onclick='changePage(${page-1})'>&laquo;</button>`;
+            for (let i=1; i<=totalPages; i++) {
+                if (i===1 || i===totalPages || (i>=page-2 && i<=page+2)) {
+                    html += `<button class='pagination-btn${i===page?' active':''}' onclick='changePage(${i})'>${i}</button>`;
+                } else if (i===page-3 || i===page+3) {
+                    html += `<span class='pagination-btn disabled'>...</span>`;
                 }
             }
-            
-            // 添加下一页按钮
-            if (currentPage < totalPages) {
-                pages.push(`<button class="pagination-btn next" onclick="changePage(${currentPage + 1})">下一页</button>`);
-            }
-            
-            paginationElement.innerHTML = pages.join('');
+            html += `<button class='pagination-btn' ${page===totalPages?'disabled':''} onclick='changePage(${page+1})'>&raquo;</button>`;
+            pag.innerHTML = html;
         }
-        
-        // 切换页码
-        function changePage(page) {
-            currentPage = page;
-            getFileList(currentPage, currentCategory, searchQuery);
-            window.scrollTo(0, 0);
+        window.changePage = function(p) { currentPage = p; loadFiles(); };
+        function formatFileSize(size) {
+            if (!size) return '0B';
+            if (size < 1024) return size + 'B';
+            if (size < 1024*1024) return (size/1024).toFixed(1) + 'KB';
+            if (size < 1024*1024*1024) return (size/1024/1024).toFixed(1) + 'MB';
+            return (size/1024/1024/1024).toFixed(1) + 'GB';
         }
-        
-        // 下载文件
-        function downloadFile(id, type = 'file') {
-            // 增加下载计数
-            fetch(`/api/media/download/${id}?type=${type}`, { method: 'POST' })
-                .then(response => {
-                    if (response.ok) {
-                        // 打开下载链接
-                        window.open(`/api/media/download/${id}?type=${type}`, '_blank');
-                    } else {
-                        throw new Error('下载失败');
-                    }
-                })
-                .catch(error => {
-                    console.error('下载错误:', error);
-                    alert('下载失败: ' + error.message);
-                });
-        }
-        
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (!bytes || bytes === 0) return '0 Bytes';
-            
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // 分类筛选
-        document.getElementById('fileCategories').addEventListener('click', function(e) {
-            if (e.target.classList.contains('file-category')) {
-                // 移除所有active类
-                document.querySelectorAll('.file-category').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // 添加active类到当前点击项
-                e.target.classList.add('active');
-                
-                // 获取分类并加载文件
-                currentCategory = e.target.dataset.category;
-                currentPage = 1;
-                getFileList(currentPage, currentCategory, searchQuery);
-            }
-        });
-        
-        // 搜索功能
-        document.getElementById('searchBtn').addEventListener('click', function() {
-            searchQuery = document.getElementById('searchInput').value.trim();
-            currentPage = 1;
-            getFileList(currentPage, currentCategory, searchQuery);
-        });
-        
-        // 回车搜索
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchQuery = this.value.trim();
-                currentPage = 1;
-                getFileList(currentPage, currentCategory, searchQuery);
-            }
-        });
-        
-        // 移动端菜单
-        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-        
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            getFileList();
-        });
     </script>
-    <script src="scripts/main.js"></script>
 </body>
 </html>

@@ -116,34 +116,27 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', requireAdmin, upload.single('avatar'), async (req, res) => {
     try {
-        const { name, title, specialty, contact, introduction } = req.body;
+        const { name, title, contact, introduction } = req.body;
         const status = req.body.status === 'true' || req.body.status === '1';
-        
         // 验证必填字段
-        if (!name || !title || !specialty) {
+        if (!name || !title) {
             return res.status(400).json({
                 success: false,
                 message: '请提供完整的委员会成员信息'
             });
         }
-        
         // 创建记录
         const newTeacher = new TeacherModel({
             name,
             title,
-            specialty,
             contact: contact || '',
             introduction: introduction || '',
             status,
             avatar: req.file ? path.basename(req.file.path) : '',
-            order: 999 // 默认排序值
+            order: 999
         });
-        
         await newTeacher.save();
-        
-        // 记录活动
         logActivity(req.session.adminId, '添加委员会成员', `添加了委员会成员: ${name}`);
-        
         res.status(201).json({
             success: true,
             message: '委员会成员添加成功',
@@ -166,38 +159,28 @@ router.post('/', requireAdmin, upload.single('avatar'), async (req, res) => {
 router.put('/:id', requireAdmin, upload.single('avatar'), async (req, res) => {
     try {
         const teacherId = req.params.id;
-        const { name, title, specialty, contact, introduction } = req.body;
+        const { name, title, contact, introduction } = req.body;
         const status = req.body.status === 'true' || req.body.status === '1';
-        
-        // 查找委员记录
         const teacher = await TeacherModel.findById(teacherId);
-        
         if (!teacher) {
             return res.status(404).json({
                 success: false,
                 message: '委员会成员不存在'
             });
         }
-        
-        // 验证必填字段
-        if (!name || !title || !specialty) {
+        if (!name || !title) {
             return res.status(400).json({
                 success: false,
                 message: '请提供完整的委员会成员信息'
             });
         }
-        
-        // 准备更新数据
         const updateData = {
             name,
             title,
-            specialty,
             contact: contact || '',
             introduction: introduction || '',
             status
         };
-        
-        // 如果上传了新头像
         if (req.file) {
             // 删除旧头像
             if (teacher.avatar) {
@@ -210,17 +193,12 @@ router.put('/:id', requireAdmin, upload.single('avatar'), async (req, res) => {
             // 保存新头像
             updateData.avatar = path.basename(req.file.path);
         }
-        
-        // 更新记录
         const updatedTeacher = await TeacherModel.findByIdAndUpdate(
             teacherId,
             updateData,
             { new: true }
         );
-        
-        // 记录活动
         logActivity(req.session.adminId, '更新委员会成员', `更新了委员会成员: ${name}`);
-        
         res.json({
             success: true,
             message: '委员会成员更新成功',

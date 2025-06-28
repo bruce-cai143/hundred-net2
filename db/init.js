@@ -166,6 +166,56 @@ async function initDatabase() {
             )
         `);
         
+        // 创建图片库表
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS images (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                title VARCHAR(200) NOT NULL COMMENT '图片标题',
+                description TEXT COMMENT '图片描述',
+                file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+                file_data LONGBLOB NOT NULL COMMENT '图片二进制数据',
+                file_size INT COMMENT '文件大小(字节)',
+                mime_type VARCHAR(100) COMMENT '文件MIME类型',
+                width INT COMMENT '图片宽度(像素)',
+                height INT COMMENT '图片高度(像素)',
+                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+                update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                uploader_id INT COMMENT '上传者ID',
+                category VARCHAR(50) DEFAULT 'uncategorized' COMMENT '图片分类',
+                tags TEXT COMMENT '图片标签(JSON格式)',
+                status TINYINT DEFAULT 1 COMMENT '状态(1:正常,0:删除)',
+                INDEX idx_category (category),
+                INDEX idx_status (status),
+                INDEX idx_upload_date (upload_date)
+            ) COMMENT '图片库表'
+        `);
+        
+        // 创建文件库表（更新版本）
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS files_new (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                title VARCHAR(200) NOT NULL COMMENT '文件标题',
+                description TEXT COMMENT '文件描述',
+                file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+                file_data LONGBLOB NOT NULL COMMENT '文件二进制数据',
+                file_size INT COMMENT '文件大小(字节)',
+                mime_type VARCHAR(100) COMMENT '文件MIME类型',
+                file_type VARCHAR(50) COMMENT '文件类型(doc/pdf/zip等)',
+                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+                update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                uploader_id INT COMMENT '上传者ID',
+                download_count INT DEFAULT 0 COMMENT '下载次数',
+                category VARCHAR(50) DEFAULT 'uncategorized' COMMENT '文件分类',
+                tags TEXT COMMENT '文件标签(JSON格式)',
+                status TINYINT DEFAULT 1 COMMENT '状态(1:正常,0:删除)',
+                version VARCHAR(20) COMMENT '文件版本号',
+                INDEX idx_category (category),
+                INDEX idx_status (status),
+                INDEX idx_upload_date (upload_date),
+                INDEX idx_file_type (file_type)
+            ) COMMENT '文件库表'
+        `);
+        
         // 创建活动日志表（已在前面创建，这里删除重复的创建语句）
         
         console.log('数据库初始化完成');

@@ -27,15 +27,32 @@ CREATE TABLE IF NOT EXISTS news (
 -- 文件表
 CREATE TABLE IF NOT EXISTS files (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size BIGINT NOT NULL,
+    path VARCHAR(255) NOT NULL,
+    category VARCHAR(50) DEFAULT 'other',
+    title VARCHAR(200),
+    description TEXT,
+    uploaded_by INT,
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TINYINT DEFAULT 1,
+    FOREIGN KEY (uploaded_by) REFERENCES admins(id)
+);
+
+-- 图片表
+CREATE TABLE IF NOT EXISTS images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200),
     description TEXT,
     file_name VARCHAR(255) NOT NULL,
     file_data LONGBLOB,
     file_size INT,
-    file_type VARCHAR(100),
-    download_count INT DEFAULT 0,
-    category VARCHAR(50),
-    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    mime_type VARCHAR(100),
+    category VARCHAR(50) DEFAULT 'uncategorized',
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TINYINT DEFAULT 1
 );
 
 -- 轮播图表
@@ -57,6 +74,29 @@ CREATE TABLE IF NOT EXISTS courses (
     suitable_grades VARCHAR(100),
     duration VARCHAR(100),
     teaching_method VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 活动表
+CREATE TABLE IF NOT EXISTS activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    type VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES admins(id)
+);
+
+-- 教师表
+CREATE TABLE IF NOT EXISTS teachers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    title VARCHAR(100),
+    department VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    bio TEXT,
+    image VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

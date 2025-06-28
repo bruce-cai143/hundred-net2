@@ -15,25 +15,26 @@ const { authenticateToken } = require('../middleware/auth');
  */
 router.get('/', async (req, res) => {
     try {
-        const { category, search, page = 1, limit = 12, offset = 0, sort = 'upload_date', order = 'DESC' } = req.query;
+        const { category, search, page = 1, limit = 12, offset = 0, sort = 'created_at', order = 'DESC' } = req.query;
         const calculatedOffset = offset || (page - 1) * limit;
         
-        let query = `SELECT id, title, description, file_name, original_name, file_path, file_size, size, path, mime_type, upload_date, download_count, category FROM files WHERE status = 1`;
-        let countQuery = `SELECT COUNT(*) as total FROM files WHERE status = 1`;
+        let query = `SELECT id, filename, original_name, mime_type, size, path, category, created_at FROM files`;
+        let countQuery = `SELECT COUNT(*) as total FROM files`;
         
         const queryParams = [];
         
         if (category && category !== 'all') {
-            query += ' AND category = ?';
-            countQuery += ' AND category = ?';
+            query += ' WHERE category = ?';
+            countQuery += ' WHERE category = ?';
             queryParams.push(category);
         }
         
         if (search) {
-            query += ' AND (title LIKE ? OR description LIKE ? OR file_name LIKE ? OR original_name LIKE ?)';
-            countQuery += ' AND (title LIKE ? OR description LIKE ? OR file_name LIKE ? OR original_name LIKE ?)';
+            const whereClause = category && category !== 'all' ? ' AND' : ' WHERE';
+            query += `${whereClause} (filename LIKE ? OR original_name LIKE ?)`;
+            countQuery += `${whereClause} (filename LIKE ? OR original_name LIKE ?)`;
             const searchTerm = `%${search}%`;
-            queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            queryParams.push(searchTerm, searchTerm);
         }
         
         // 添加排序和分页
@@ -49,15 +50,15 @@ router.get('/', async (req, res) => {
         // 格式化结果
         const formattedFiles = files.map(file => ({
             id: file.id,
-            title: file.title,
-            description: file.description,
-            filename: file.file_name || file.original_name,
-            size: file.file_size || file.size,
-            uploadDate: file.upload_date || new Date(),
-            path: file.file_path || file.path,
+            title: file.original_name,
+            description: '',
+            filename: file.original_name,
+            size: file.size,
+            uploadDate: file.created_at,
+            path: file.path,
             downloadUrl: `/api/downloads/download/${file.id}`,
             mime_type: file.mime_type,
-            download_count: file.download_count || 0,
+            download_count: 0,
             category: file.category
         }));
         
@@ -89,7 +90,7 @@ router.get('/:id', async (req, res) => {
         const { id } = req.params;
         
         const [files] = await db.query(
-            'SELECT * FROM files WHERE id = ? AND status = 1',
+            'SELECT * FROM files WHERE id = ?',
             [id]
         );
         
@@ -113,7 +114,7 @@ router.get('/download/:id', async (req, res) => {
         const { id } = req.params;
         
         const [files] = await db.query(
-            'SELECT * FROM files WHERE id = ? AND status = 1',
+            'SELECT * FROM files WHERE id = ?',
             [id]
         );
         
@@ -122,27 +123,15 @@ router.get('/download/:id', async (req, res) => {
         }
         
         const file = files[0];
-        const filePath = file.file_path || file.path;
+        const filePath = file.path;
         const fullPath = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath);
         
         if (!fs.existsSync(fullPath)) {
             return res.status(404).json({ success: false, message: '文件不存在于服务器' });
         }
         
-        // 更新下载计数
-        await db.query(
-            'UPDATE files SET download_count = download_count + 1 WHERE id = ?',
-            [id]
-        );
-        
-        // 记录下载活动
-        await db.query(
-            'INSERT INTO activities (type, description) VALUES (?, ?)',
-            ['文件下载', `用户下载了文件 ${file.file_name || file.original_name}`]
-        );
-        
         // 设置文件名
-        const fileName = file.file_name || file.original_name;
+        const fileName = file.original_name;
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
         res.setHeader('Content-Type', file.mime_type || 'application/octet-stream');
         

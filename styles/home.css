@@ -290,14 +290,42 @@ body.subtle-bg {
 /* 新闻卡片增强 */
 .news-card {
     box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255,255,255,0.6);
+    border: 2px solid rgba(33, 150, 243, 0.2);
     background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.8) 100%);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.news-card:hover {
+    border-color: rgba(33, 150, 243, 0.5);
+    box-shadow: 0 20px 40px rgba(33, 150, 243, 0.1);
+}
+
+/* 校园动态整体容器边框 */
+.news-section {
+    border: 3px solid rgba(33, 150, 243, 0.15);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 40px 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(240,248,255,0.5) 100%);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.news-section .section-title {
+    margin-bottom: 30px;
+    color: #1976d2;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.news-section .section-title::after {
+    background: linear-gradient(90deg, #2196F3, #1976d2);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
 }
 
 .news-image {
     height: 220px;
     position: relative;
     overflow: hidden;
+    border-radius: 8px 8px 0 0;
 }
 
 .news-image::after {
@@ -496,4 +524,13 @@ body.subtle-bg {
         height: 60px;
         font-size: 1.2rem;
     }
+}
+
+.news-section {
+    border: 2px solid #2997ff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(41,151,255,0.08);
+    padding: 32px 24px 24px 24px;
+    background: #fff;
+    margin-bottom: 40px;
 }

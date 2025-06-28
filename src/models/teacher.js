@@ -25,7 +25,6 @@ const TeacherSchema = new Schema({
     // 专业/专长
     specialty: {
         type: String,
-        required: [true, '专业/专长不能为空'],
         trim: true,
         maxlength: [200, '专业/专长不能超过200个字符']
     },

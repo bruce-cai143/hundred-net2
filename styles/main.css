@@ -415,14 +415,29 @@ body {
 }
 
 /* ================= 视频展示 ================= */
+.video-section {
+    padding: var(--section-padding) 0;
+    margin: var(--section-margin) 0;
+    text-align: center;
+}
+
 .video-container {
     position: relative;
-    margin-top: 40px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    border: var(--section-border);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background: var(--card-bg);
+    box-shadow: var(--section-shadow);
 }
 
 .campus-video {
     width: 100%;
-    border-radius: var(--border-radius);
+    height: 400px;
+    object-fit: cover;
+    display: block;
 }
 
 .play-btn {
@@ -464,7 +479,7 @@ body {
 
 .footer-links {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 40px;
 }
 

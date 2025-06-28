@@ -13,14 +13,14 @@ router.get('/news', async (req, res) => {
     }
 });
 
-// 获取轮播图数量
-router.get('/slides', async (req, res) => {
+// 获取图片数量
+router.get('/images-count', async (req, res) => {
     try {
-        const [result] = await db.query('SELECT COUNT(*) as count FROM slides');
+        const [result] = await db.query('SELECT COUNT(*) as count FROM files WHERE category = "image"');
         res.json({ count: result[0].count });
     } catch (error) {
-        console.error('获取轮播图数量失败:', error);
-        res.status(500).json({ error: '获取轮播图数量失败' });
+        console.error('获取图片数量失败:', error);
+        res.status(500).json({ error: '获取图片数量失败' });
     }
 });
 
@@ -32,6 +32,28 @@ router.get('/teachers', async (req, res) => {
     } catch (error) {
         console.error('获取教师数量失败:', error);
         res.status(500).json({ error: '获取教师数量失败' });
+    }
+});
+
+// 获取文件数量
+router.get('/files', async (req, res) => {
+    try {
+        const [result] = await db.query('SELECT COUNT(*) as count FROM files');
+        res.json({ count: result[0].count });
+    } catch (error) {
+        console.error('获取文件数量失败:', error);
+        res.status(500).json({ error: '获取文件数量失败' });
+    }
+});
+
+// 获取轮播图数量
+router.get('/slides', async (req, res) => {
+    try {
+        const [result] = await db.query('SELECT COUNT(*) as count FROM slides');
+        res.json({ count: result[0].count });
+    } catch (error) {
+        console.error('获取轮播图数量失败:', error);
+        res.status(500).json({ error: '获取轮播图数量失败' });
     }
 });
 

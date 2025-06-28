@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const offset = (state.currentPage - 1) * state.limit;
         
         // 构建API URL
-        let url = `/api/media/files?limit=${state.limit}&offset=${offset}&sort=upload_date&order=${state.order}`;
+        let url = `/api/media/files?limit=${state.limit}&offset=${offset}&sort=created_at&order=${state.order}`;
         if (state.category) {
             url += `&category=${state.category}`;
         }
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '';
         
         files.forEach(file => {
-            const uploadDate = new Date(file.upload_date).toLocaleDateString('zh-CN');
+            const uploadDate = new Date(file.created_at).toLocaleDateString('zh-CN');
             const fileSize = formatFileSize(file.file_size);
             const fileType = getFileType(file.file_name);
             
