@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+/*const mysql = require('mysql2/promise');
 
 // 数据库连接配置
 const dbConfig = {
@@ -12,3 +12,19 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 module.exports = pool;
+*/
+
+const mysql = require('mysql2');
+
+const db = mysql.createPool({ 
+    host: process.env.MYSQLHOST, 
+    port: process.env.MYSQLPORT, 
+    user: process.env.MYSQLUSER, 
+    password: process.env.MYSQLPASSWORD, 
+    database: process.env.MYSQLDATABASE, 
+    waitForConnections: true, 
+    connectionLimit: 10, 
+    queueLimit: 0 
+}); 
+
+module.exports = db;

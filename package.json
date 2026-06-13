@@ -4,8 +4,8 @@
   "description": "未来科技中学官方网站",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
     "init-db": "node database/init.js"
   },
   "dependencies": {
