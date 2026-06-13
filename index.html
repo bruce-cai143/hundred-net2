@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>首页 - 实外西区百人计划</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css?v=20240601">
+    <link rel="stylesheet" href="styles/animations.css?v=20240601">
+    <link rel="stylesheet" href="styles/home.css?v=20240601">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="subtle-bg">
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/Logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="active">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="team.html">青年委员会</a>
+                <a href="download.html">资料下载</a>
+                <a href="contact.html">百人计划</a>
+                
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main class>
+        <!-- 轮播图 -->
+        <section class="hero-section">
+            <div class="carousel-container">
+                <div class="carousel-slide">
+                    <!-- <div class="slide active" src='assets/images/slide1.jpg'>  -->
+                    <div class="slide active"    style="background-image: url('assets/images/slide1.jpg')">
+                        <div class="slide-content">
+                            <h2>K12培养</h2>
+                            <p>实外西区小学部百人计划预备班开班仪式</p>
+                            <a href="https://mp.weixin.qq.com/s/5O5BqkcY-iRqqA32z22R2g" class="button">查看更多</a>
+                        </div>
+                    </div>
+                    <!-- <div class="slide active" src='assets/images/slide2.jpg'>  -->
+                    <div class="slide" style="background-image: url('assets/images/slide2.jpg')">
+                        <div class="slide-content">
+                            <h2>卓雅讲堂</h2>
+                            <p>百人计划拓展课程专家讲座</p>
+                            <a href="https://mp.weixin.qq.com/s/8--xTuoEV5ss24OsdxOj6Al" class="button outline">查看更多</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-controls">
+                    <button class="control-btn button icon prev">‹</button>
+                    <div class="pagination"></div>
+                    <button class="control-btn button icon next">›</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 校长寄语 -->
+        <section class="principal-section container fade-in-section">
+            <div class="card greet-card hover-lift">
+                <h2>校长寄语</h2>
+                <p style="padding-top: 5%;">教育的本质在于激发学生的发展潜能，努力为学生
+                    的个性发展、全面发展、终身发展奠定坚实的基础。
+                   </p>
+                   <p>
+                    The essence of education lies in realizing the potential of students' development, and laying the solid foundation for personalized, all-round and lifelong development.
+                   </p>  <!-- 缺失 -->
+                <div class="signature">
+                    <img src="assets/images/logo1.png" alt="校长签名">
+                    <p>肖明华 校长</p>
+                </div>
+                <a href="hm.html" class="button ghost">关于校长</a>
+            </div>
+        </section>
+
+        <!-- 校园动态 -->
+        <section class="news-section container fade-in-section">
+            <h2 class="section-title">校园动态</h2>
+            <div class="news-grid" id="newsGrid"></div>
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="button" id="loadMoreBtn">加载更多</button>
+                <a href="news-list.html" class="button outline">查看全部</a>
+            </div>
+        </section>
+
+        <!-- 视频展示 -->
+        <section class="video-section container fade-in-section" style="max-width: 800px; margin: 0 auto;">
+            <h2 class="section-title">校园全景</h2>
+            <div class="video-container card hover-lift" style="max-width: 800px !important; width: 85% !important; margin: 0 auto;">
+                <video class="campus-video" poster="assets/images/br1.png" controls>
+                    <source src="assets/video/1.mp4" type="video/mp4">
+                    您的浏览器不支持视频播放
+                </video>
+                <button class="play-btn button icon">▶</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo"><br>
+            </div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                </div>   
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
+                    <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
+                </div>
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="im.html" class="button ghost">学校简介</a>
+                    <a href="https://www.tfswgz.com/" class="button ghost">高中部</a>
+                    <a href="https://www.cdswxq.com/" class="button ghost">实外西区</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：万安街道麓山大道二段533号</p>
+                    <p>电话：(028)61909605</p>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 DIGIT 计算机社团 <a href="admin/login.html" class="admin-link">管理入口</a></p>
+        </div>
+    </footer>
+    <script src="scripts/home.js"></script>
+</body>
+    <script src="scripts/main.js"></script>
+<!-- </body> -->
+</html>

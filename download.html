@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资料下载 - 实外西区百人计划</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+    <link rel="stylesheet" href="styles/pages.css">
+    <!-- 添加Bootstrap支持 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .download-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .file-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .file-category {
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f1f1f1;
+            transition: all 0.3s;
+        }
+        .file-category.active {
+            background: #2196F3;
+            color: white;
+        }
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .file-card {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #2196F3;
+            text-align: center;
+        }
+        .file-info {
+            flex-grow: 1;
+        }
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .file-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .file-description {
+            color: #333;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        .file-actions {
+            margin-top: auto;
+        }
+        .download-btn {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .download-btn:hover {
+            background: #388E3C;
+        }
+        .download-count {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+            gap: 10px;
+        }
+        .pagination-btn {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .pagination-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+        .pagination-btn:hover:not(.active) {
+            background: #f5f5f5;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-btn {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .no-files {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        /* 图片墙样式 */
+        #image-gallery-section {
+            display: none;
+            margin-top: 30px;
+        }
+        .gallery-container {
+            margin-top: 20px;
+        }
+        
+        /* 图片卡片样式 */
+        #gallery-container .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        #gallery-container .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        #gallery-container .card-img-top {
+            transition: transform 0.3s ease;
+        }
+        
+        #gallery-container .card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+        
+        #gallery-container .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        #gallery-container .card-text {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* 分类过滤器样式 */
+        .category-filter .btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .category-filter .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* 图片分页样式 */
+        #image-pagination {
+            margin-top: 30px;
+            justify-content: center;
+        }
+        
+        #image-pagination .pagination-btn {
+            margin: 0 5px;
+        }
+        
+        /* 加载进度条样式 */
+        #loading-progress {
+            margin: 20px 0;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            #gallery-container .col-md-4 {
+                margin-bottom: 20px;
+            }
+            
+            .category-filter .btn {
+                margin-bottom: 8px;
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body class="subtle-bg">
+    <!-- 导航栏 -->
+    <nav class="nav-container glass-effect">
+        <div class="nav-content">
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo1.png" alt="校徽" width="40"><img src="assets/images/logo2.png" alt="校徽" width="40"><img src="assets/images/logo3.png" alt="百人" width="40">
+                <span><img src="assets/images/bt.png" alt=""></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="about.html">学校介绍</a>
+                <a href="team.html">青年委员会</a>
+                <a href="download.html" class="active">资料下载</a>
+                <a href="contact.html">百人计划</a>
+            </div>
+            <button class="mobile-menu-btn button icon">☰</button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="container">
+                <h1>资料下载</h1>
+                <p>获取学习资料、课程表、通知文件等</p>
+            </div>
+        </div>
+
+        <div class="download-container">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
+                <button class="search-btn" id="searchBtn">搜索</button>
+            </div>
+
+            <div class="file-categories" id="fileCategories">
+                <div class="file-category active" data-category="all">全部</div>
+                <div class="file-category" data-category="document">文档</div>
+                <div class="file-category" data-category="image">图片</div>
+                <div class="file-category" data-category="video">视频</div>
+                <div class="file-category" data-category="audio">音频</div>
+                <div class="file-category" data-category="other">其他</div>
+            </div>
+
+            <div class="file-grid" id="fileGrid"></div>
+
+            <div class="pagination" id="pagination"></div>
+
+            <!-- 图片展示区域 -->
+            <section id="image-gallery-section" class="gallery-container">
+                <h2 class="section-title mb-4">校园图集</h2>
+                
+                <!-- 分类过滤器 -->
+                <div class="category-filter mb-4">
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('uncategorized')">全部</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('activities')">校园活动</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('campus')">校园环境</button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterByCategory('events')">重要事件</button>
+                </div>
+
+                <!-- 图片加载进度条 -->
+                <div id="loading-progress" class="progress mb-4 d-none">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+
+                <!-- 图片展示区域 -->
+                <div id="gallery-container" class="row g-4">
+                    <!-- 图片将通过JavaScript动态加载 -->
+                </div>
+
+                <!-- 图片分页 -->
+                <div class="pagination" id="image-pagination"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer-container">
+        <div class="footer-content container">
+            <div class="footer-logo"></div>
+            <div class="footer-links">
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAx9EsygMfO2P1kve40Sy8Y-cbHeL5WmEa1zot7LQxueg" class="button ghost">百人抖音</a>
+                    <a href="https://www.douyin.com/user/MS4wLjABAAAAjVPTrcCann88ZpoGgbk8-3a71ErD9Vd3oU8qRCTr3ufXTH2jDBu0I_UP_-uKnbmN" class="button ghost">西区抖音</a>
+                    <a href="mailto:cdswxqxx@163.com" class="button ghost">校长邮箱</a>
+                    <a href="mailto:274290195@qq.com" class="button ghost">食品安全</a>
+                </div>
+                <div class="link-column">
+                    <h4>快速链接</h4>
+                    <a href="im.html" class="button ghost">学校简介</a>
+                    <a href="https://www.tfswgz.com/" class="button ghost">高中部</a>
+                    <a href="https://www.cdswxq.com/" class="button ghost">实外西区</a>
+                </div>
+                <div class="link-column">
+                    <h4>联系我们</h4>
+                    <p>地址：万安街道麓山大道二段533号</p>
+                    <p>电话：(028)61909605</p>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2024 DIGIT 计算机社团 <a href="admin/login.html" class="admin-link">管理入口</a></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript依赖 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/main.js"></script>
+    <script>
+        // 文件类型图标
+        const fileIcons = {
+            'document': '📄',
+            'image': '🖼️',
+            'video': '🎬',
+            'audio': '🎵',
+            'other': '📦'
+        };
+        let currentPage = 1;
+        let currentCategory = '';
+        let currentSearch = '';
+        const pageSize = 12;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            bindDownloadEvents();
+            loadFiles();
+        });
+
+        function bindDownloadEvents() {
+            // 搜索
+            document.getElementById('searchBtn').onclick = function() {
+                currentSearch = document.getElementById('searchInput').value.trim();
+                currentPage = 1;
+                loadFiles();
+            };
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentSearch = this.value.trim();
+                    currentPage = 1;
+                    loadFiles();
+                }
+            });
+            // 分类
+            document.querySelectorAll('.file-category').forEach(el => {
+                el.onclick = function() {
+                    document.querySelectorAll('.file-category').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category === 'all' ? '' : this.dataset.category;
+                    currentPage = 1;
+                    loadFiles();
+                };
+            });
+        }
+
+        async function loadFiles() {
+            const grid = document.getElementById('fileGrid');
+            grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border" role="status"></div></div>';
+            let url = `/api/media/files?limit=${pageSize}&offset=${(currentPage-1)*pageSize}`;
+            if (currentCategory) url += `&category=${encodeURIComponent(currentCategory)}`;
+            if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+            url += '&sort=created_at&order=DESC';
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || '加载失败');
+                renderFileGrid(data.files);
+                renderPagination(data.total, currentPage);
+            } catch (e) {
+                grid.innerHTML = `<div class='col-12 text-center text-danger py-5'>${e.message}</div>`;
+                document.getElementById('pagination').innerHTML = '';
+            }
+        }
+
+        function renderFileGrid(files) {
+            const grid = document.getElementById('fileGrid');
+            if (!files || files.length === 0) {
+                grid.innerHTML = `<div class='no-files'>暂无可下载文件</div>`;
+                return;
+            }
+            grid.innerHTML = files.map(file => {
+                const icon = fileIcons[file.category] || fileIcons.other;
+                const fileSize = formatFileSize(file.size);
+                const uploadDate = new Date(file.created_at).toLocaleDateString();
+                return `<div class='file-card'>
+                    <div class='file-icon'>${icon}</div>
+                    <div class='file-info'>
+                        <div class='file-name'>${file.original_name}</div>
+                        <div class='file-meta'>${fileSize} | 上传：${uploadDate}</div>
+                    </div>
+                    <div class='file-actions'>
+                        <button class='download-btn' onclick='window.open("/api/media/download/${file.id}")'><i class='bi bi-download'></i> 下载</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderPagination(total, page) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pag = document.getElementById('pagination');
+            if (totalPages <= 1) { pag.innerHTML = ''; return; }
+            let html = '';
+            html += `<button class='pagination-btn' ${page===1?'disabled':''} onclick='changePage(${page-1})'>&laquo;</button>`;
+            for (let i=1; i<=totalPages; i++) {
+                if (i===1 || i===totalPages || (i>=page-2 && i<=page+2)) {
+                    html += `<button class='pagination-btn${i===page?' active':''}' onclick='changePage(${i})'>${i}</button>`;
+                } else if (i===page-3 || i===page+3) {
+                    html += `<span class='pagination-btn disabled'>...</span>`;
+                }
+            }
+            html += `<button class='pagination-btn' ${page===totalPages?'disabled':''} onclick='changePage(${page+1})'>&raquo;</button>`;
+            pag.innerHTML = html;
+        }
+        window.changePage = function(p) { currentPage = p; loadFiles(); };
+        function formatFileSize(size) {
+            if (!size) return '0B';
+            if (size < 1024) return size + 'B';
+            if (size < 1024*1024) return (size/1024).toFixed(1) + 'KB';
+            if (size < 1024*1024*1024) return (size/1024/1024).toFixed(1) + 'MB';
+            return (size/1024/1024/1024).toFixed(1) + 'GB';
+        }
+    </script>
+</body>
+</html>
