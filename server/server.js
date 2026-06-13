@@ -133,8 +133,8 @@ app.get('/js/main.js', (req, res) => {
         while (retryCount < maxRetries) {
             try {
                 await new Promise((resolve, reject) => {
-                    const server = app.listen(currentPort, () => {
-                        console.log(`服务器运行在 http://localhost:${currentPort}`);
+                    const server = app.listen(currentPort, '0.0.0.0', () => {
+                        console.log(`服务器运行在 http://0.0.0.0:${currentPort}`);
                         resolve();
                     }).on('error', (err) => {
                         if (err.code === 'EADDRINUSE') {
