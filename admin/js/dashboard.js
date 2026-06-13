@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
             if (confirm('确定要退出登录吗？')) {
-                window.location.href = '/admin/login.html';
+                window.location.href = '/index.html';
             }
         });
     }

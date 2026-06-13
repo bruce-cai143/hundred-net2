@@ -54,42 +54,43 @@ app.use(session({
     }
 }));
 
-// 配置静态资源
-app.use(express.static(__dirname));
-app.use('/uploads', express.static('uploads'));
+// 配置静态资源 - 指向public目录
+app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use('/admin', express.static(path.join(__dirname, '..', 'admin')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// 添加根路径处理，确保能访问到根目录的index.html
+// 添加根路径处理，确保能访问到public目录的index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // 添加其他HTML页面的路由处理
 app.get('/about.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'about.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'about.html'));
 });
 
 app.get('/gallery.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'gallery.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'gallery.html'));
 });
 
 app.get('/team.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'team.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'team.html'));
 });
 
 app.get('/download.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'download.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'download.html'));
 });
 
 app.get('/contact.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'contact.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'contact.html'));
 });
 
 app.get('/news.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'news.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'news.html'));
 });
 
 app.get('/news-list.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'news-list.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'news-list.html'));
 });
 
 // 注册路由
@@ -112,7 +113,7 @@ app.use('/api/count', countRoutes);
 
 // 添加主 JavaScript 文件的路由
 app.get('/js/main.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'scripts', 'main.js'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'scripts', 'main.js'));
 });
 
 // 启动服务器前初始化数据库
