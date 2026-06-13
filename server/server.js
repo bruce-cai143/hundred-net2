@@ -4,7 +4,12 @@ const path = require('path');
 const session = require('express-session');
 const { PORT } = require('./config/config');
 const { testDatabaseConnection, initDatabase, checkAndUpdateTables } = require('./db/init');
-
+const cors = require('cors');
+// 必须在路由定义之前使用，允许特定域名并开启凭证支持
+app.use(cors({
+  origin: ['https://your-frontend.vercel.app', 'http://localhost:5173'],
+  credentials: true
+}));
 // 立即初始化数据库
 (async () => {
     try {
